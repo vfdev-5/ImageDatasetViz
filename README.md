@@ -4,6 +4,8 @@
 Idea is to create tools (API, CLI) to store images, targets from a dataset as a few large images to observe the dataset 
 in few shots.
 
+**Python 3 only**
+
 ## How to use
 
 ### Classification dataset
