@@ -109,8 +109,7 @@ def write_obj_label(img, pos, label, font):
 
 
 def is_ndarray_image(img):
-    return isinstance(img, np.ndarray) and img.ndim == 3 and \
-           img.shape[2] == 3 and img.dtype == np.uint8
+    return isinstance(img, np.ndarray) and img.ndim == 3 and img.shape[2] == 3 and img.dtype == np.uint8
 
 
 def is_pil_image(img):
@@ -127,7 +126,7 @@ def is_list_of_points(target):
 
 def is_points_with_labels(target):
     return isinstance(target, (tuple, list)) and len(target) == 2 and \
-           isinstance(target[1], str) and is_points(target[0])
+        isinstance(target[1], str) and is_points(target[0])
 
 
 def is_list_of_points_with_labels(target):
@@ -136,21 +135,21 @@ def is_list_of_points_with_labels(target):
 
 def check_image_type(img):
     assert is_ndarray_image(img) or \
-           is_pil_image(img), "Image should be `ndarray` of shape (h, w, 3), type `uint8` or" + \
-                              "`PIL.Image.Image` with mode 'RBG', but given {}".format(type(img))
+        is_pil_image(img), "Image should be `ndarray` of shape (h, w, 3), type `uint8` or" + \
+                           "`PIL.Image.Image` with mode 'RBG', but given {}".format(type(img))
 
 
 def check_target_type(target):
     assert isinstance(target, str) or \
-           is_points(target) or \
-           is_list_of_points(target) or \
-           is_points_with_labels(target) or \
-           is_list_of_points_with_labels(target) or \
-           is_ndarray_image(target) or \
-           is_pil_image(target), "Target should be a text as `str`, points as list of `ndarray`s of shape (N, 2)," + \
-                                 "points with labels as list of pairs (`ndarray` of shape (N, 2), `str`)" + \
-                                 "or segmentation masks as `ndarray` of shape (h, w, 3), type `uint8` or " + \
-                                 "`PIL.Image.Image` with mode 'RGB', but given {}".format(type(target))
+        is_points(target) or \
+        is_list_of_points(target) or \
+        is_points_with_labels(target) or \
+        is_list_of_points_with_labels(target) or \
+        is_ndarray_image(target) or \
+        is_pil_image(target), "Target should be a text as `str`, points as list of `ndarray`s of shape (N, 2)," + \
+                              "points with labels as list of pairs (`ndarray` of shape (N, 2), `str`)" + \
+                              "or segmentation masks as `ndarray` of shape (h, w, 3), type `uint8` or " + \
+                              "`PIL.Image.Image` with mode 'RGB', but given {}".format(type(target))
 
 
 def to_pil(img):
