@@ -44,8 +44,7 @@ def get_tqdm_kwargs(**kwargs):
 
 
 def get_tqdm(**kwargs):
-    """ Similar to :func:`get_tqdm_kwargs`,
-    but returns the tqdm object directly. """
+    """Similar to `get_tqdm_kwargs`, but returns the tqdm object directly."""
     return tqdm(**get_tqdm_kwargs(**kwargs))
 
 
@@ -159,11 +158,65 @@ def to_pil(img):
         return img
 
 
+def check_img_id_fn(img_id_fn, f):
+    try:
+        ret = img_id_fn(f)
+    except Exception as e:
+        raise TypeError("There is a problem with provided `img_id_fn`: {}".format(e))
+    assert isinstance(ret, str), "Output of `img_id_fn` should be a string"
+
+
 class DatasetExporter:
     """
-    Helper class to export dataset of images/targets as a few images for better visualization.
+    Helper class to export dataset of images/targets as a few large images for better visualization.
 
-    We assume
+    For example, we have a dataset of image files and annotations files (polygons with labels):
+    ```
+    img_files = [
+        '/path/to/image_1.ext',
+        '/path/to/image_2.ext',
+        ...
+        '/path/to/image_1000.ext',
+    ]
+    target_files = [
+        '/path/to/target_1.ext2',
+        '/path/to/target_2.ext2',
+        ...
+        '/path/to/target_1000.ext2',
+    ]
+    ```
+    We can produce a single image composed of 20x50 small samples with targets to better visualize the whole dataset.
+    Let's assume that we do need a particular processing to open the images in RGB 8bits format:
+    ```
+    from PIL import Image
+
+    def read_img_fn(img_filepath):
+        return Image.open(img_filepath).convert('RGB')
+    ```
+    and let's say the annotations are just lines with points and a label, e.g. `12 23 34 45 56 67 car`
+    ```
+    import numpy as np
+
+    def read_target_fn(target_filepath):
+        with Path(target_filepath).open('r') as handle:
+            points_labels = []
+            while True:
+                line = handle.readline()
+                if len(line) == 0:
+                    break
+                splt = line[:-1].split(' ')  # Split into points and labels
+                label = splt[-1]
+                points = np.array(splt[:-1]).reshape(-1, 2)
+                points_labels.append((points, label))
+        return points_labels
+    ```
+    Now we can export the dataset
+    ```
+    de = DatasetExporter(read_img_fn=read_img_fn, read_target_fn=read_target_fn,
+                         img_id_fn=lambda fp: Path(fp).stem, n_cols=20)
+    de.export(img_files, target_files, output_folder="dataset_viz")
+    ```
+    and thus we should obtain a single png image with composed of 20x50 small samples.
     """
 
     def __init__(self, read_img_fn=None, read_target_fn=None, img_id_fn=None,
@@ -172,15 +225,27 @@ class DatasetExporter:
                  background_color=(127, 127, 120),
                  text_color=(255, 245, 235), text_size=11,
                  blend_alpha=0.75):
-        # Initialize dataset exporter instance
+        """
+        Initialize dataset exporter instance
 
-        # read_img_fn should return image as `ndarray` of shape (h, w, 3), type `uint8` or `PIL.Image.Image` with
-        # mode 'RBG'
-        # read_target_fn can return text as `str`,
-        #     list of polygons as list of `ndarray` of shape (N, 2),
-        #     polygons points with labels as list of pairs (`ndarray` of shape (N, 2), `str`),
-        #     or segmentation masks as `ndarray` of shape (h, w, 3), type `uint8` or `PIL.Image.Image` with mode 'RGB'
-
+        Args:
+            read_img_fn: (callable) it specified, it should return image as `ndarray` of shape (h, w, 3), type `uint8`
+                or `PIL.Image.Image` with mode 'RBG'. By default, `imread_pillow` function is used.
+            read_target_fn: (callable) if specified can return text as `str`, list of polygons as list of `ndarray` of
+                shape (N, 2), polygons points with labels as list of pairs (`ndarray` of shape (N, 2), `str`), or
+                segmentation masks as `ndarray` of shape (h, w, 3), type `uint8` or `PIL.Image.Image` with mode 'RGB'.
+                By default, identity function is used. Provided target is rendered as a string value.
+            img_id_fn: (callable) optional, transforms image filepath to image id string displayed over each sample
+            max_output_img_size: (tuple of 2 integers) sample maximum size in the output image
+            margins: (tuple of 2 integers) margins between samples
+            n_cols: (int) number of columns in the output image
+            max_n_rows: (int) maximum number of rows of samples in the output image. If dataset is really big, thus we
+                produce several output images instead of a single tower-like image.
+            background_color: (tuple or list) background color (R, G, B) if margin is not zero
+            text_color: (tuple or list) text color (R, G, B) used to draw image id and other labels
+            text_size: (int) text size
+            blend_alpha: (float) alpha used to blen
+        """
         self.read_img_fn = read_img_fn if read_img_fn is not None else imread_pillow
         self.read_target_fn = read_target_fn if read_target_fn is not None else identity
         self.img_id_fn = img_id_fn if img_id_fn is not None else default_img_id
@@ -192,7 +257,7 @@ class DatasetExporter:
         self.text_color = text_color
         self.text_size = text_size
         self.blend_alpha = blend_alpha
-        # Test create a font
+        # Test if can create a font
         try:
             self.default_font = ImageFont.truetype(font="DejaVuSans.ttf", size=text_size)
         except OSError:
@@ -200,6 +265,18 @@ class DatasetExporter:
             self.default_font = ImageFont.truetype(font=font_path.as_posix(), size=text_size)
 
     def export_datapoint(self, img_file, target, output_filepath):
+        """
+        Export a single sample. This method can be used to test sample rendering
+
+        Args:
+            img_file: input image index, filepath, everything acceptable by `read_img_fn`
+            target: input target index, filepath, everything acceptable by `read_target_fn`
+            output_filepath: output filepath
+
+        Returns:
+
+        """
+        check_img_id_fn(self.img_id_fn, img_file)
         img = self._render_datapoint(img_file, target)
         filepath = Path(output_filepath)
         if filepath.suffix != ".png":
@@ -260,6 +337,19 @@ class DatasetExporter:
             return Image.blend(img, mask, alpha=self.blend_alpha)
 
     def export(self, img_files, targets, output_folder, filename_prefix="dataset"):
+        """
+        Method to export the dataset represented by `img_files` and `targets`
+        Args:
+            img_files: list of image indices, paths, everything acceptable by `read_img_fn`
+            targets: list of targets, indices, paths, everything acceptable by `read_target_fn`
+            output_folder: (str) output folder path
+            filename_prefix: (str) output large output image filename prefix. Output filename is
+                `filename_prefix + "_part_x.png"`
+        Returns:
+
+        """
+        assert isinstance(img_files, (list, tuple)) and isinstance(targets, (list, tuple)), \
+            "Arguments `img_files` and `targets` should be lists or tuples"
         assert len(img_files) == len(targets), \
             "Number of input images should be equal to the number of input targets"
         output = Path(output_folder)
@@ -283,5 +373,5 @@ class DatasetExporter:
                     y = iy * (self.max_output_img_size[1] + self.margins[1]) + self.margins[1] // 2
                     img = self._render_datapoint(f, t)
                     total_img.paste(img, (x, y))
+                    bar.update(1)
                 total_img.save(filepath.as_posix())
-                bar.update(max_counter)

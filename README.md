@@ -6,42 +6,60 @@ in few shots.
 
 **Python 3 only**
 
-## How to use
+![VEDAI example](examples/vedai_example.png)
 
-### Classification dataset
+## Usage
 
+For example, we have a dataset of image files and annotations files (polygons with labels):
 ```python
-
 img_files = [
-    '/path/to/img_1.ext1',
-    # ...
-    '/path/to/img_2.ext2',
-    # ...
+    '/path/to/image_1.ext',
+    '/path/to/image_2.ext',
+    ...
+    '/path/to/image_1000.ext',
 ]
-
-targets = [
-    'label_0',
-    # ...
-    12,
-    # ...
+target_files = [
+    '/path/to/target_1.ext2',
+    '/path/to/target_2.ext2',
+    ...
+    '/path/to/target_1000.ext2',
 ]
-
-def img_to_RGB_8b(img):
-    # Special processing
-    return img
-
-def target_to_str(y):
-    # Special processing
-    return str(y)
-
-from image_dataset_viz import DatasetExporter
-
-
-de = DatasetExporter(render_img_fn=img_to_RGB_8b, 
-                     render_target_fn=target_to_str)
-                     
-de.export_datapoint(img_files[1], targets[1], "test.png")
-
-output_folder="viz"
-de.export(img_files, targets, output_folder, filename_prefix="all_images")
 ```
+We can produce a single image composed of 20x50 small samples with targets to better visualize the whole dataset.
+Let's assume that we do need a particular processing to open the images in RGB 8bits format:
+```python
+from PIL import Image
+
+def read_img_fn(img_filepath):
+    return Image.open(img_filepath).convert('RGB')
+```
+and let's say the annotations are just lines with points and a label, e.g. `12 23 34 45 56 67 car`
+```python
+import numpy as np
+
+def read_target_fn(target_filepath):
+    with Path(target_filepath).open('r') as handle:
+        points_labels = []
+        while True:
+            line = handle.readline()
+            if len(line) == 0:
+                break
+            splt = line[:-1].split(' ')  # Split into points and labels
+            label = splt[-1]
+            points = np.array(splt[:-1]).reshape(-1, 2)
+            points_labels.append((points, label))
+    return points_labels
+```
+Now we can export the dataset
+```python
+de = DatasetExporter(read_img_fn=read_img_fn, read_target_fn=read_target_fn,
+                     img_id_fn=lambda fp: Path(fp).stem, n_cols=20)
+de.export(img_files, target_files, output_folder="dataset_viz")
+```
+and thus we should obtain a single png image with composed of 20x50 small samples.
+
+
+## Examples
+
+- [CIFAR10](examples/example_CIFAR10.ipynb)
+- [VEDAI](examples/example_VEDAI.ipynb)
