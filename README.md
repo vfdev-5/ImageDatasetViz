@@ -1,12 +1,29 @@
 
-**WORK IN PROGRESS**
+# ImageDatasetViz 
+[![Build Status](https://travis-ci.org/vfdev-5/ImageDatasetViz.svg?branch=master)](https://travis-ci.org/vfdev-5/ImageDatasetViz)
+[![Coverage Status](https://coveralls.io/repos/github/vfdev-5/ImageDatasetViz/badge.svg?branch=master)](https://coveralls.io/github/vfdev-5/ImageDatasetViz?branch=master)
+
+Observe dataset of images and targets in few shots
+ 
+**Python 3 only**
+
+##### /!\ work still in progress /!\
+
+
+![VEDAI example](examples/vedai_example.png)
+
+## Descriptions
 
 Idea is to create tools (API, CLI) to store images, targets from a dataset as a few large images to observe the dataset 
 in few shots.
 
-**Python 3 only**
 
-![VEDAI example](examples/vedai_example.png)
+
+## Installation 
+
+```bash
+python3 setup.py install
+```
 
 ## Usage
 
