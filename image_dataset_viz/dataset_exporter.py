@@ -368,12 +368,12 @@ class DatasetExporter:
         total_width = (self.max_output_img_size[0] + self.margins[0]) * self.n_cols
         total_height = (self.max_output_img_size[0] + self.margins[0]) * n_rows
         size = (total_width, total_height)
-        total_img = Image.new(mode='RGB', size=size, color=self.background_color)
         n_images = len(img_files)
         max_counter = n_rows * self.n_cols
 
         with get_tqdm(total=n_images) as bar:
             for c in range(0, n_images, max_counter):
+                total_img = Image.new(mode='RGB', size=size, color=self.background_color)
                 filepath = output / (filename_prefix + "_part_{}.png".format(c))
                 for i, (f, t) in enumerate(zip(img_files[c:c + max_counter], targets[c:c + max_counter])):
                     iy, ix = np.unravel_index(i, (n_rows, self.n_cols))
