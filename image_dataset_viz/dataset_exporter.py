@@ -271,6 +271,7 @@ class DatasetExporter:
         Args:
             img_file: input image index, filepath, everything acceptable by `read_img_fn`
             target: input target index, filepath, everything acceptable by `read_target_fn`
+                or None if not needed
             output_filepath: output filepath
 
         Returns:
@@ -283,7 +284,7 @@ class DatasetExporter:
             filepath += ".png"
         img.save(filepath)
 
-    def _render_datapoint(self, f, t):
+    def _render_datapoint(self, f, t=None):
         # Open input image
         raw_img = self.read_img_fn(f)
         check_image_type(raw_img)
@@ -292,11 +293,11 @@ class DatasetExporter:
         img, scale = resize_image(img, self.max_output_img_size)
 
         # Open target
-        target = self.read_target_fn(t)
-        check_target_type(target)
-
-        # Render target
-        self._render_target(img, target, scale=scale)
+        if t is not None:
+            target = self.read_target_fn(t)
+            check_target_type(target)
+            # Render target
+            self._render_target(img, target, scale=scale)
 
         # Write image id
         image_id = self.img_id_fn(f)
@@ -342,16 +343,23 @@ class DatasetExporter:
         Args:
             img_files: list of image indices, paths, everything acceptable by `read_img_fn`
             targets: list of targets, indices, paths, everything acceptable by `read_target_fn`
+                or None if not needed
             output_folder: (str) output folder path
             filename_prefix: (str) output large output image filename prefix. Output filename is
                 `filename_prefix + "_part_x.png"`
         Returns:
 
         """
-        assert isinstance(img_files, (list, tuple)) and isinstance(targets, (list, tuple)), \
-            "Arguments `img_files` and `targets` should be lists or tuples"
-        assert len(img_files) == len(targets), \
-            "Number of input images should be equal to the number of input targets"
+        assert isinstance(img_files, (list, tuple)), \
+            "Arguments `img_files` should be lists or tuples"
+        if targets is not None:
+            assert isinstance(targets, (list, tuple)), \
+                "Arguments `targets` should be lists or tuples"
+            assert len(img_files) == len(targets), \
+                "Number of input images should be equal to the number of input targets"
+        else:
+            targets = [None] * len(img_files)
+
         output = Path(output_folder)
         if not output.exists():
             output.mkdir(parents=True)
