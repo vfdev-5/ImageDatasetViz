@@ -24,6 +24,10 @@ in few shots.
 ```bash
 python3 setup.py install
 ```
+or 
+```bash
+pip3 install git+https://github.com/vfdev-5/ImageDatasetViz.git
+```
 
 ## Usage
 
