@@ -62,6 +62,7 @@ def render_datapoint(img, target=None, image_id=None, output_size=None,
             len(output_size) == 2, "output_size should be a list of 2 integers".format(img.size)
         img, scale = resize_image(img, output_size)
     else:
+        img = img.copy()
         scale = 1.0
 
     if target is not None:
@@ -276,17 +277,17 @@ def render_target(img, target, scale=1.0, text_color=(0, 255, 0), text_size=10, 
         "Text size should be a positive integer"
     assert isinstance(blend_alpha, float) and 0.0 <= blend_alpha <= 1.0, \
         "Alpha should be a positive float between 0 and 1"
+    assert isinstance(scale, float) and scale > 0.0, \
+        "Scale should be a positive float"
     img = to_pil(img)
 
     def _render_points(target):
-        if scale != 1.0:
-            target = [(int(p[0] / scale), int(p[1] / scale)) for p in target]
+        target = [(int(p[0] / scale), int(p[1] / scale)) for p in target]
         draw_poly(img, target, color=(0, 255, 0))
 
     def _render_points_with_label(target, font):
         poly = target[0]
-        if scale != 1.0:
-            poly = [(int(p[0] / scale), int(p[1] / scale)) for p in poly]
+        poly = [(int(p[0] / scale), int(p[1] / scale)) for p in poly]
         draw_poly(img, poly, color=(0, 255, 0))
         pos = np.max(poly, axis=0).tolist()
         write_obj_label(img, pos, label=target[1], font=font)
@@ -294,7 +295,6 @@ def render_target(img, target, scale=1.0, text_color=(0, 255, 0), text_size=10, 
     if isinstance(target, str):
         font = get_default_font(text_size)
         write_text(img, target, (1, 1), color=text_color, font=font)
-        return img
     elif is_points(target):
         _render_points(target)
     elif is_list_of_points(target):
@@ -313,6 +313,7 @@ def render_target(img, target, scale=1.0, text_color=(0, 255, 0), text_size=10, 
             # Rescale mask
             mask = mask.resize(img.size)
         return Image.blend(img, mask, alpha=blend_alpha)
+    return img
 
 
 def get_tqdm_kwargs(**kwargs):
