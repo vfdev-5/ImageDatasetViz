@@ -1,4 +1,4 @@
 
 __version__ = '0.1'
 
-from .dataset_exporter import DatasetExporter
+from .dataset_exporter import DatasetExporter, render_datapoint
