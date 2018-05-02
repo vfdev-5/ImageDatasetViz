@@ -25,7 +25,8 @@ def get_default_font(text_size):
 
 
 def render_datapoint(img, target=None, image_id=None, output_size=None,
-                     text_color=(0, 255, 0), text_size=10, blend_alpha=0.7):
+                     text_color=(0, 255, 0), text_size=10,
+                     geom_color=(0, 255, 0), blend_alpha=0.7):
     """Method to render image and target as PIL image
 
     Args:
@@ -38,6 +39,7 @@ def render_datapoint(img, target=None, image_id=None, output_size=None,
             than output_size, output image is rescaled with aspect ratio preserved.
         text_color (list, optional): text color (R, G, B) if target contains a text
         text_size (int, optional): text size if target contains a text.
+        geom_color (int, optional): geometry color (R, G, B) if target contains polygons to draw
         blend_alpha (float): alpha for blending mask image into the input image
 
     Returns:
@@ -68,7 +70,7 @@ def render_datapoint(img, target=None, image_id=None, output_size=None,
     if target is not None:
         # Render target
         img = render_target(img, target, scale=scale, text_color=text_color,
-                            text_size=text_size, blend_alpha=blend_alpha)
+                            text_size=text_size, geom_color=geom_color, blend_alpha=blend_alpha)
 
     # Write image id
     if image_id is not None:
@@ -135,6 +137,7 @@ class DatasetExporter:
                  n_cols=10, max_n_rows=50,
                  background_color=(127, 127, 120),
                  text_color=(255, 245, 235), text_size=11,
+                 geom_color=(0, 255, 0),
                  blend_alpha=0.75):
         """
         Initialize dataset exporter instance
@@ -155,6 +158,7 @@ class DatasetExporter:
             background_color (tuple or list): background color (R, G, B) if margin is not zero
             text_color (tuple or list): text color (R, G, B) used to draw image id and other labels
             text_size (int): text size
+            geom_color (int, optional): geometry color (R, G, B) if target contains polygons to draw
             blend_alpha (float): alpha used to blend
         """
         self.read_img_fn = read_img_fn if read_img_fn is not None else imread_pillow
@@ -167,6 +171,7 @@ class DatasetExporter:
         self.background_color = background_color
         self.text_color = text_color
         self.text_size = text_size
+        self.geom_color = geom_color
         self.blend_alpha = blend_alpha
         # Test if can create a font
         self.default_font = get_default_font(text_size)
@@ -191,7 +196,8 @@ class DatasetExporter:
             target = self.read_target_fn(target)
 
         img = render_datapoint(raw_img, target, image_id=image_id, output_size=self.max_output_img_size,
-                               text_color=self.text_color, text_size=self.text_size, blend_alpha=self.blend_alpha)
+                               text_color=self.text_color, text_size=self.text_size,
+                               geom_color=self.geom_color, blend_alpha=self.blend_alpha)
 
         filepath = Path(output_filepath)
         if filepath.suffix != ".png":
@@ -246,13 +252,14 @@ class DatasetExporter:
                     target = self.read_target_fn(t)
                     img = render_datapoint(raw_img, target, image_id=image_id, output_size=self.max_output_img_size,
                                            text_color=self.text_color, text_size=self.text_size,
-                                           blend_alpha=self.blend_alpha)
+                                           geom_color=self.geom_color, blend_alpha=self.blend_alpha)
                     total_img.paste(img, (x, y))
                     bar.update(1)
                 total_img.save(filepath.as_posix())
 
 
-def render_target(img, target, scale=1.0, text_color=(0, 255, 0), text_size=10, blend_alpha=0.7):
+def render_target(img, target, scale=1.0, text_color=(255, 255, 0), text_size=10,
+                  geom_color=(0, 255, 0), blend_alpha=0.7):
     """Method to render target to the image
 
     Args:
@@ -263,6 +270,7 @@ def render_target(img, target, scale=1.0, text_color=(0, 255, 0), text_size=10, 
         scale (float, optional): if scale is different of 1.0 then rescale the target
         text_color (list, optional): text color (R, G, B) if target contains a text
         text_size (int, optional): text size if target contains a text.
+        geom_color (int, optional): geometry color (R, G, B) if target contains polygons to draw
         blend_alpha (float): alpha for blending mask image into the input image
 
     Returns:
@@ -274,20 +282,22 @@ def render_target(img, target, scale=1.0, text_color=(0, 255, 0), text_size=10, 
         "Text color should be a list of 3 integers"
     assert isinstance(text_size, int) and text_size > 0, \
         "Text size should be a positive integer"
+    assert isinstance(geom_color, (list, tuple)) and len(geom_color) == 3, \
+        "Geometry color should be a list of 3 integers"
     assert isinstance(blend_alpha, float) and 0.0 <= blend_alpha <= 1.0, \
         "Alpha should be a positive float between 0 and 1"
     assert isinstance(scale, float) and scale > 0.0, \
         "Scale should be a positive float"
     img = to_pil(img)
 
-    def _render_points(target):
+    def _render_points(target, color=(0, 255, 0)):
         target = [(int(p[0] / scale), int(p[1] / scale)) for p in target]
-        draw_poly(img, target, color=(0, 255, 0))
+        draw_poly(img, target, color=color)
 
-    def _render_points_with_label(target, font):
+    def _render_points_with_label(target, font, color=(0, 255, 0)):
         poly = target[0]
         poly = [(int(p[0] / scale), int(p[1] / scale)) for p in poly]
-        draw_poly(img, poly, color=(0, 255, 0))
+        draw_poly(img, poly, color=color)
         pos = np.max(poly, axis=0).tolist()
         write_obj_label(img, pos, label=target[1], font=font)
 
@@ -295,17 +305,17 @@ def render_target(img, target, scale=1.0, text_color=(0, 255, 0), text_size=10, 
         font = get_default_font(text_size)
         write_text(img, target, (1, 1), color=text_color, font=font)
     elif is_points(target):
-        _render_points(target)
+        _render_points(target, geom_color)
     elif is_list_of_points(target):
         for t in target:
-            _render_points(t)
+            _render_points(t, geom_color)
     elif is_points_with_labels(target):
         font = get_default_font(text_size)
-        _render_points_with_label(target, font)
+        _render_points_with_label(target, font, geom_color)
     elif is_list_of_points_with_labels(target):
         font = get_default_font(text_size)
         for t in target:
-            _render_points_with_label(t, font)
+            _render_points_with_label(t, font, geom_color)
     elif is_ndarray_image(target) or is_pil_image(target):
         mask = to_pil(target)
         if scale != 1.0:

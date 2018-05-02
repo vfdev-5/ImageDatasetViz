@@ -7,16 +7,12 @@ Observe dataset of images and targets in few shots
  
 **Python 3 only**
 
-##### /!\ work still in progress /!\
-
-
 ![VEDAI example](examples/vedai_example.png)
 
 ## Descriptions
 
-Idea is to create tools (API, CLI) to store images, targets from a dataset as a few large images to observe the dataset 
+Idea is to create tools to store images, targets from a dataset as a few large images to observe the dataset 
 in few shots.
-
 
 
 ## Installation 
@@ -31,6 +27,29 @@ pip3 install git+https://github.com/vfdev-5/ImageDatasetViz.git
 
 ## Usage
 
+### Render a single datapoint
+
+First, we can just take a look on a single data point rendering. Let's assume that we
+have `img` as, for example, `PIL.Image` and `target` as acceptable target type (`str` or list of points or 
+`PIL.Image` mask, etc), thus we can generate a single image with target.
+
+```python
+from image_dataset_viz import render_datapoint
+
+# if target is a simple label
+res = render_datapoint(img, "test label", text_color=(0, 255, 0), text_size=10)
+plt.imshow(res)
+
+# if target is a mask image (PIL.Image)
+res = render_datapoint(img, target, blend_alpha=0.5)
+plt.imshow(res)
+
+# if target is a bounding box, e.g. np.array([[10, 10], [55, 10], [55, 77], [10, 77]])
+res = render_datapoint(img, target, geom_color=(255, 0, 0))
+plt.imshow(res)
+```
+
+### Export complete dataset
 For example, we have a dataset of image files and annotations files (polygons with labels):
 ```python
 img_files = [
