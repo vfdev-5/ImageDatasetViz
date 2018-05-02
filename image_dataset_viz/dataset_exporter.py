@@ -225,7 +225,7 @@ class DatasetExporter:
         if not output.exists():
             output.mkdir(parents=True)
 
-        n_rows = max(min(len(img_files) // self.n_cols, self.max_n_rows), 1)
+        n_rows = max(min(int(np.ceil(len(img_files) / self.n_cols)), self.max_n_rows), 1)
         total_width = (self.max_output_img_size[0] + self.margins[0]) * self.n_cols
         total_height = (self.max_output_img_size[0] + self.margins[0]) * n_rows
         size = (total_width, total_height)
