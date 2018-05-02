@@ -67,14 +67,13 @@ def render_datapoint(img, target=None, image_id=None, output_size=None,
 
     if target is not None:
         # Render target
-        render_target(img, target, scale=scale, text_color=text_color,
-                      text_size=text_size, blend_alpha=blend_alpha)
+        img = render_target(img, target, scale=scale, text_color=text_color,
+                            text_size=text_size, blend_alpha=blend_alpha)
 
     # Write image id
     if image_id is not None:
         font = get_default_font(text_size)
-        write_text(img, image_id, (1, img.size[1]),
-                   color=text_color, font=font)
+        write_text(img, image_id, (1, img.size[1]), color=text_color, font=font)
     return img
 
 
