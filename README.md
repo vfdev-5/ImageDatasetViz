@@ -49,6 +49,10 @@ res = render_datapoint(img, target, geom_color=(255, 0, 0))
 plt.imshow(res)
 ```
 
+#### Example output on Leaf Segmentation dataset from CVPPP2017
+
+![image with mask](examples/image_mask.png)  ![image with label](examples/image_label.png)  ![image with bbox label](examples/image_bbox_label.png)
+
 ### Export complete dataset
 For example, we have a dataset of image files and annotations files (polygons with labels):
 ```python
