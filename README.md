@@ -5,8 +5,6 @@
 
 Observe dataset of images and targets in few shots
  
-**Python 3 only**
-
 ![VEDAI example](examples/vedai_example.png)
 
 ## Descriptions
@@ -18,11 +16,11 @@ in few shots.
 ## Installation 
 
 ```bash
-python3 setup.py install
+python setup.py install
 ```
 or 
 ```bash
-pip3 install git+https://github.com/vfdev-5/ImageDatasetViz.git
+pip install git+https://github.com/vfdev-5/ImageDatasetViz.git
 ```
 
 ## Usage
@@ -75,6 +73,7 @@ def read_img_fn(img_filepath):
 ```
 and let's say the annotations are just lines with points and a label, e.g. `12 23 34 45 56 67 car`
 ```python
+from pathlib import Path
 import numpy as np
 
 def read_target_fn(target_filepath):

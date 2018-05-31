@@ -1,5 +1,10 @@
+from __future__ import division
 import sys
-from pathlib import Path
+
+try:
+    from pathlib import Path
+except ImportError:
+    from pathlib2 import Path
 
 import numpy as np
 from PIL import ImageDraw, ImageFont, Image

@@ -1,16 +1,30 @@
-from codecs import open as codecs_open
+import os
+import io
+import re
 from setuptools import setup, find_packages
-from image_dataset_viz import __version__
 
 
-# Get the long description from the relevant file
-with codecs_open('README.md', encoding='utf-8') as f:
-    long_description = f.read()
+def read(*names, **kwargs):
+    with io.open(os.path.join(os.path.dirname(__file__), *names),
+                 encoding=kwargs.get("encoding", "utf8")) as fp:
+        return fp.read()
+
+
+def find_version(*file_paths):
+    version_file = read(*file_paths)
+    version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]", version_file, re.M)
+    if version_match:
+        return version_match.group(1)
+    raise RuntimeError("Unable to find version string.")
+
+
+long_description = read("README.md")
+version = find_version('image_dataset_viz', '__init__.py')
 
 
 setup(
     name="image_dataset_viz",
-    version=__version__,
+    version=version,
     description=u"Observe dataset of images and targets in few shots",
     long_description=long_description,
     author="vfdev-5",
@@ -19,7 +33,8 @@ setup(
     install_requires=[
         'numpy',
         'Pillow',
-        'tqdm'
+        'tqdm',
+        'pathlib2;python_version<"3"'
     ],
     license='MIT',
     test_suite="tests",

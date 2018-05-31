@@ -1,6 +1,12 @@
 
-import tempfile
-from pathlib import Path
+import sys
+
+if sys.version_info[0] < 3:
+    from backports import tempfile
+    from pathlib2 import Path
+else:
+    import tempfile
+    from pathlib import Path
 
 from unittest import TestCase, main
 
