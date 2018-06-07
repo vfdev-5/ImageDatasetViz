@@ -15,6 +15,13 @@ in few shots.
 
 ## Installation 
 
+#### with pip
+
+```bash
+ pip install image-dataset-viz 
+```
+
+#### from sources
 ```bash
 python setup.py install
 ```

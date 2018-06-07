@@ -6,7 +6,7 @@ matrix:
         - python: 2.7
 
 install:
-  - pip install numpy Pillow tqdm
+  # Install test only dependency
   - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
       pip install backports.tempfile;
     fi

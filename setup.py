@@ -28,7 +28,8 @@ setup(
     description=u"Observe dataset of images and targets in few shots",
     long_description=long_description,
     author="vfdev-5",
-    author_email="vfdev dot 5 at gmail dot com",
+    author_email="vfdev.5@gmail.com",
+    url="https://github.com/vfdev-5/ImageDatasetViz",
     packages=find_packages(exclude=['tests', 'examples']),
     install_requires=[
         'numpy',
