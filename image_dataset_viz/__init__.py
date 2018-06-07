@@ -1,5 +1,5 @@
 
-__version__ = '0.2.1'
+__version__ = '0.2.1.1'
 
 import numpy as np
 
@@ -10,13 +10,13 @@ def bbox_to_points(bbox_xyxy):
     """Helper method to convert bounding box as list/tuple of [x1, y1, x2, y2] into points `ndarray` of shape (N, 2)
 
     Args:
-        bbox_xyxy (list or tuple): bounding box as list/tuple of [x1, y1, x2, y2]
+        bbox_xyxy (list or tuple or ndarray): bounding box as list/tuple of [x1, y1, x2, y2]
 
     Returns:
         ndarray of points
 
     """
-    assert isinstance(bbox_xyxy, (list, tuple)) and len(bbox_xyxy) == 4, \
+    assert isinstance(bbox_xyxy, (list, tuple, np.ndarray)) and len(bbox_xyxy) == 4, \
         "Argument bbox_xyxy should be a list/tuple of [x1, y1, x2, y2]"
 
     return np.array([
@@ -37,7 +37,7 @@ def xywh_to_xyxy(xywh):
         list [x1, y1, x2, y2]
 
     """
-    assert isinstance(xywh, (list, tuple)) and len(xywh) == 4, \
+    assert isinstance(xywh, (list, tuple, np.ndarray)) and len(xywh) == 4, \
         "Argument xywh should be a list/tuple of [x1, y1, width, height]"
     x1, y1 = xywh[0], xywh[1]
     x2 = x1 + max(0, xywh[2] - 1)
@@ -55,7 +55,7 @@ def xyxy_to_xywh(xyxy):
         list [x1, y1, width, height]
 
     """
-    assert isinstance(xyxy, (list, tuple)) and len(xyxy) == 4, \
+    assert isinstance(xyxy, (list, tuple, np.ndarray)) and len(xyxy) == 4, \
         "Argument xyxy should be a list/tuple of [x1, y1, x2, y2]"
     x1, y1 = xyxy[0], xyxy[1]
     w = xyxy[2] - x1 + 1
