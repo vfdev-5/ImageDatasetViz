@@ -31,6 +31,7 @@ setup(
     author_email="vfdev.5@gmail.com",
     url="https://github.com/vfdev-5/ImageDatasetViz",
     packages=find_packages(exclude=['tests', 'examples']),
+    include_package_data=True,
     install_requires=[
         'numpy',
         'Pillow',
@@ -39,10 +40,7 @@ setup(
     ],
     license='MIT',
     test_suite="tests",
-    extras_require={
-        'tests': [
-            'pytest',
-            'pytest-cov'
-        ]
-    }
+    tests_require=[
+        'backports.tempfile;python_version<"3"'
+    ]
 )
