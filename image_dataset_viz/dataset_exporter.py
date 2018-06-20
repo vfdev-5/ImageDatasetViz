@@ -25,7 +25,7 @@ def get_default_font(text_size):
     try:
         return ImageFont.truetype(font="DejaVuSans.ttf", size=text_size)
     except OSError:
-        font_path = Path(__file__).parent() / "fonts" / "DejaVuSans.ttf"
+        font_path = Path(__file__).parent / "fonts" / "DejaVuSans.ttf"
         return ImageFont.truetype(font=font_path.as_posix(), size=text_size)
 
 
