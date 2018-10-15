@@ -36,9 +36,10 @@ def render_datapoint(img, target=None, image_id=None, output_size=None,
 
     Args:
         img (PIL.Image.Image or np.ndarray): input image
-        target (optional): text as `str`, list of polygons as list of `ndarray` of
-                shape (N, 2), polygons points with labels as list of pairs (`ndarray` of shape (N, 2), `str`), or
+        target (optional): text as `str` or polygons (or list of polygons) as (list of) `ndarray` of
+                shape (N, 2) or polygons points with labels as (list of) pairs (`ndarray` of shape (N, 2), `str`), or
                 segmentation masks as `ndarray` of shape (h, w, 3), type `uint8` or `PIL.Image.Image` with mode 'RGB'.
+                Target can be also a tuple/list of all these basic types.
         image_id (str, optional): Image id to write in the output image
         output_size (list, optional): output image maximum size. If input image height or width is larger
             than output_size, output image is rescaled with aspect ratio preserved.
@@ -54,14 +55,15 @@ def render_datapoint(img, target=None, image_id=None, output_size=None,
     check_image_type(img)
     if target is not None:
         check_target_type(target)
+
+    if image_id is not None:
+        assert isinstance(image_id, str), "Image id should be a string"
+
+    if target is not None or image_id is not None:
         assert isinstance(text_color, (list, tuple)) and len(text_color) == 3, \
             "Text color should be a list of 3 integers"
         assert isinstance(text_size, int) and text_size > 0, \
             "Text size should be a positive integer"
-        assert isinstance(blend_alpha, float) and 0.0 <= blend_alpha <= 1.0, \
-            "Alpha should be a positive float between 0 and 1"
-    if image_id is not None:
-        assert isinstance(image_id, str), "Image id should be a string"
 
     img = to_pil(img)
     if output_size is not None:
@@ -148,12 +150,13 @@ class DatasetExporter:
         Initialize dataset exporter instance
 
         Args:
-            read_img_fn (callable): it specified, it should return image as `ndarray` of shape (h, w, 3), type `uint8`
-                or `PIL.Image.Image` with mode 'RBG'. By default, `imread_pillow` function is used.
-            read_target_fn (callable): if specified can return text as `str`, list of polygons as list of `ndarray` of
-                shape (N, 2), polygons points with labels as list of pairs (`ndarray` of shape (N, 2), `str`), or
+            read_img_fn (callable, optional): it specified, it should return image as `ndarray` of shape (h, w, 3),
+                type `uint8` or `PIL.Image.Image` with mode 'RBG'. By default, `imread_pillow` function is used.
+            read_target_fn (callable, optional): if specified, it can return text as `str`, (list of) polygons as (list
+                of) `ndarray` of shape (N, 2), polygons points with labels as (list of) pairs
+                (`ndarray` of shape (N, 2), `str`), or
                 segmentation masks as `ndarray` of shape (h, w, 3), type `uint8` or `PIL.Image.Image` with mode 'RGB'.
-                By default, identity function is used. Provided target is rendered as a string value.
+                By default, identity function is used.
             img_id_fn (callable): optional, transforms image filepath to image id string displayed over each sample
             max_output_img_size (tuple of 2 integers): sample maximum size in the output image
             margins (tuple of 2 integers): margins between samples
@@ -165,6 +168,7 @@ class DatasetExporter:
             text_size (int): text size
             geom_color (int, optional): geometry color (R, G, B) if target contains polygons to draw
             blend_alpha (float): alpha used to blend
+
         """
         self.read_img_fn = read_img_fn if read_img_fn is not None else imread_pillow
         self.read_target_fn = read_target_fn if read_target_fn is not None else identity
@@ -206,7 +210,7 @@ class DatasetExporter:
 
         filepath = Path(output_filepath)
         if filepath.suffix != ".png":
-            filepath += ".png"
+            filepath = Path(filepath.as_posix() + ".png")
         img.save(filepath)
 
     def export(self, img_files, targets, output_folder, filename_prefix="dataset"):
@@ -295,39 +299,52 @@ def render_target(img, target, scale=1.0, text_color=(255, 255, 0), text_size=10
         "Scale should be a positive float"
     img = to_pil(img)
 
-    def _render_points(target, color=(0, 255, 0)):
+    def _render_points(img, target, color=(0, 255, 0)):
         target = [(int(p[0] / scale), int(p[1] / scale)) for p in target]
         draw_poly(img, target, color=color)
 
-    def _render_points_with_label(target, font, color=(0, 255, 0)):
+    def _render_points_with_label(img, target, font, color=(0, 255, 0)):
         poly = target[0]
         poly = [(int(p[0] / scale), int(p[1] / scale)) for p in poly]
         draw_poly(img, poly, color=color)
         pos = np.max(poly, axis=0).tolist()
         write_obj_label(img, pos, label=target[1], font=font)
 
-    if isinstance(target, str):
-        font = get_default_font(text_size)
-        write_text(img, target, (1, 1), color=text_color, font=font)
-    elif is_points(target):
-        _render_points(target, geom_color)
-    elif is_list_of_points(target):
-        for t in target:
-            _render_points(t, geom_color)
-    elif is_points_with_labels(target):
-        font = get_default_font(text_size)
-        _render_points_with_label(target, font, geom_color)
-    elif is_list_of_points_with_labels(target):
-        font = get_default_font(text_size)
-        for t in target:
-            _render_points_with_label(t, font, geom_color)
-    elif is_ndarray_image(target) or is_pil_image(target):
-        mask = to_pil(target)
-        if scale != 1.0:
-            # Rescale mask
-            mask = mask.resize(img.size)
-        return Image.blend(img, mask, alpha=blend_alpha)
-    return img
+    def _recursive_render_target(img, target):
+        if isinstance(target, str):
+            font = get_default_font(text_size)
+            write_text(img, target, (1, 1), color=text_color, font=font)
+            return img
+        elif is_points(target):
+            _render_points(img, target, geom_color)
+            return img
+        elif is_list_of_points(target):
+            for t in target:
+                _render_points(img, t, geom_color)
+            return img
+        elif is_points_with_labels(target):
+            font = get_default_font(text_size)
+            _render_points_with_label(img, target, font, geom_color)
+            return img
+        elif is_list_of_points_with_labels(target):
+            font = get_default_font(text_size)
+            for t in target:
+                _render_points_with_label(img, t, font, geom_color)
+            return img
+        elif is_ndarray_image(target) or is_pil_image(target):
+            mask = to_pil(target)
+            if scale != 1.0:
+                # Rescale mask
+                mask = mask.resize(img.size)
+            return Image.blend(img, mask, alpha=blend_alpha)
+        elif is_list_of_basic_types(target):
+            for t in target:
+                img = _recursive_render_target(img, t)
+            return img
+        else:
+            raise TypeError("Unknown target type")
+
+    return _recursive_render_target(img, target)
 
 
 def get_tqdm_kwargs(**kwargs):
@@ -461,17 +478,28 @@ def check_image_type(img):
                            "`PIL.Image.Image` with mode 'RBG', but given {}".format(type(img))
 
 
-def check_target_type(target):
-    assert isinstance(target, str) or \
+def is_basic_target_type(target):
+    return isinstance(target, str) or \
         is_points(target) or \
         is_list_of_points(target) or \
         is_points_with_labels(target) or \
         is_list_of_points_with_labels(target) or \
         is_ndarray_image(target) or \
-        is_pil_image(target), "Target should be a text as `str`, points as list of `ndarray`s of shape (N, 2)," + \
-                              "points with labels as list of pairs (`ndarray` of shape (N, 2), `str`)" + \
-                              "or segmentation masks as `ndarray` of shape (h, w, 3), type `uint8` or " + \
-                              "`PIL.Image.Image` with mode 'RGB', but given {}".format(type(target))
+        is_pil_image(target)
+
+
+def is_list_of_basic_types(target):
+    return isinstance(target, (tuple, list)) and all([is_basic_target_type(t) for t in target])
+
+
+def check_target_type(target):
+
+    assert is_list_of_basic_types(target) or is_basic_target_type(target), \
+        "Target should be a text as `str`, points as list of `ndarray`s of shape (N, 2)," + \
+        "points with labels as list of pairs (`ndarray` of shape (N, 2), `str`)" + \
+        "or segmentation masks as `ndarray` of shape (h, w, 3), type `uint8` or " + \
+        "`PIL.Image.Image` with mode 'RGB'. " + \
+        "Target can be also a tuple/list of all this basic types. but given {}".format(type(target))
 
 
 def to_pil(img):

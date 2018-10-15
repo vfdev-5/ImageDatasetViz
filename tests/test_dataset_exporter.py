@@ -55,15 +55,23 @@ class TestDatasetExporter(TestCase):
     def test_render_datapoint(self):
 
         img = np.ones((100, 120, 3), dtype=np.uint8)
+        target1 = "test label"
         res = render_datapoint(img, "test label", text_color=(0, 255, 0), text_size=10)
         assert isinstance(res, Image.Image)
 
-        target = Image.fromarray(np.ones((100, 120, 3), dtype=np.uint8))
-        res = render_datapoint(img, target, text_color=(0, 255, 0), text_size=10)
+        target2 = Image.fromarray(np.ones((100, 120, 3), dtype=np.uint8))
+        res = render_datapoint(img, target1, text_color=(0, 255, 0), text_size=10)
         assert isinstance(res, Image.Image)
 
-        target = np.array([[10, 10], [55, 10], [55, 77], [10, 77]])
-        res = render_datapoint(img, target, geom_color=(255, 0, 0))
+        target3 = np.array([[10, 10], [55, 10], [55, 77], [10, 77]])
+        res = render_datapoint(img, target2, geom_color=(255, 0, 0))
+        assert isinstance(res, Image.Image)
+
+        target4 = (np.array([[10, 10], [55, 10], [55, 77], [10, 77]]), "test")
+        res = render_datapoint(img, target2, geom_color=(255, 0, 0))
+        assert isinstance(res, Image.Image)
+
+        res = render_datapoint(img, [target1, target2, target3, target4], geom_color=(255, 0, 0))
         assert isinstance(res, Image.Image)
 
     def test_export_datapoint(self):
@@ -77,6 +85,19 @@ class TestDatasetExporter(TestCase):
             path = Path(tmpdir) / "test.png"
             de.export_datapoint(0, "test", path.as_posix())
             self.assertTrue(path.exists())
+
+    def test_export_datapoint_non_png(self):
+
+        def read_img(i):
+            img = Image.new(mode='RGB', size=(64, 64), color=(i % 255, (i * 2) % 255, (i * 3) % 255))
+            return img
+
+        de = DatasetExporter(read_img_fn=read_img, img_id_fn=lambda x: str(x))
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "test.jpg"
+            output_path = Path(tmpdir) / "test.jpg.png"
+            de.export_datapoint(0, "test", path.as_posix())
+            self.assertTrue(output_path.exists())
 
     def test_export_datapoint_target_none(self):
 
@@ -98,6 +119,36 @@ class TestDatasetExporter(TestCase):
 
         def read_target(i):
             return "label_{}".format(i)
+
+        n = 100
+        s = 32
+        m = 5
+        max_n_rows = 5
+        n_cols = 10
+        de = DatasetExporter(read_img_fn=read_img, read_target_fn=read_target,
+                             img_id_fn=lambda x: str(x),
+                             max_output_img_size=(s, s), margins=(m, m),
+                             n_cols=n_cols, max_n_rows=max_n_rows)
+
+        indices = [i for i in range(n)]
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            de.export(indices, indices, output_folder=tmpdir)
+            path = Path(tmpdir)
+            out_files = list(path.glob("*.png"))
+            self.assertEqual(len(out_files), int(np.ceil(n / (n_cols * max_n_rows))))
+            for fp in out_files:
+                out_img = Image.open(fp)
+                self.assertEqual(out_img.size, ((s + m) * n_cols, (s + m) * max_n_rows))
+
+    def test_integration_targets_as_poly(self):
+
+        def read_img(i):
+            img = Image.new(mode='RGB', size=(64, 64), color=(i % 255, (i * 2) % 255, (i * 3) % 255))
+            return img
+
+        def read_target(i):
+            return np.array([[10 + i, 10], [55 + i, 10], [55, 77], [10, 77]]), "label_{}".format(i)
 
         n = 100
         s = 32
