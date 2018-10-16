@@ -36,10 +36,10 @@ def render_datapoint(img, target=None, image_id=None, output_size=None,
 
     Args:
         img (PIL.Image.Image or np.ndarray): input image
-        target (optional): text as `str` or polygons (or list of polygons) as (list of) `ndarray` of
-                shape (N, 2) or polygons points with labels as (list of) pairs (`ndarray` of shape (N, 2), `str`), or
-                segmentation masks as `ndarray` of shape (h, w, 3), type `uint8` or `PIL.Image.Image` with mode 'RGB'.
-                Target can be also a tuple/list of all these basic types.
+        target (optional): text as `str` or polygons as `ndarray` of shape (N, 2) or polygons points with labels as
+            pairs (`ndarray` of shape (N, 2), `str`), or segmentation masks as `ndarray` of shape (h, w, 3),
+            type `uint8` or `PIL.Image.Image` with mode 'RGB'. Target can be also a tuple/list of all these basic types.
+            See note below how to override target rendering parameters for a subset of targets.
         image_id (str, optional): Image id to write in the output image
         output_size (list, optional): output image maximum size. If input image height or width is larger
             than output_size, output image is rescaled with aspect ratio preserved.
@@ -47,6 +47,35 @@ def render_datapoint(img, target=None, image_id=None, output_size=None,
         text_size (int, optional): text size if target contains a text.
         geom_color (int, optional): geometry color (R, G, B) if target contains polygons to draw
         blend_alpha (float): alpha for blending mask image into the input image
+
+
+    Note:
+        It is possible to override target rendering parameters (`text_color`, `text_size`, `geom_color`, ...) for a
+        single or a subset of input target. Below there is an example on how to draw a mask, 3 bboxes such that 2 of
+        bboxes have yellow outline and the third bbox is drawn with default parameters:
+
+        .. code-block:: python
+
+            import numpy as np
+            from image_dataset_viz import render_datapoint, bbox_to_points
+
+
+            img = ((0, 0, 255) * np.ones((256, 256, 3))).astype(np.uint8)
+            mask = 0 * np.ones((256, 256, 3), dtype=np.uint8)
+            mask[34:145, 56:123, :] = 255
+
+            targets = (
+                (mask, {"blend_alpha": 0.6}),
+                (
+                    (bbox_to_points((10, 12, 145, 156)), "A"),
+                    (bbox_to_points((109, 120, 215, 236)), "B"),
+                    {"geom_color": (255, 255, 0)}
+                ),
+                (bbox_to_points((129, 140, 175, 186)), "C"),
+            )
+
+
+            render_datapoint(img, targets, blend_alpha=0.5)
 
     Returns:
         PIL.Image.Image
@@ -152,10 +181,10 @@ class DatasetExporter:
         Args:
             read_img_fn (callable, optional): it specified, it should return image as `ndarray` of shape (h, w, 3),
                 type `uint8` or `PIL.Image.Image` with mode 'RBG'. By default, `imread_pillow` function is used.
-            read_target_fn (callable, optional): if specified, it can return text as `str`, (list of) polygons as (list
-                of) `ndarray` of shape (N, 2), polygons points with labels as (list of) pairs
-                (`ndarray` of shape (N, 2), `str`), or
-                segmentation masks as `ndarray` of shape (h, w, 3), type `uint8` or `PIL.Image.Image` with mode 'RGB'.
+            read_target_fn (callable, optional): if specified, it can return text as `str`, polygons as
+                `ndarray` of shape (N, 2), polygons points with labels as pair
+                (`ndarray` of shape (N, 2), `str`), or segmentation masks as `ndarray` of shape (h, w, 3), type `uint8`
+                or `PIL.Image.Image` with mode 'RGB'. Target can also a tuple/list of all these basic types.
                 By default, identity function is used.
             img_id_fn (callable): optional, transforms image filepath to image id string displayed over each sample
             max_output_img_size (tuple of 2 integers): sample maximum size in the output image
@@ -273,14 +302,14 @@ def render_target(img, target, scale=1.0, text_color=(255, 255, 0), text_size=10
 
     Args:
         img (PIL.Image.Image or np.ndarray): input image
-        target: text as `str`, list of polygons as list of `ndarray` of
-                shape (N, 2), polygons points with labels as list of pairs (`ndarray` of shape (N, 2), `str`), or
-                segmentation masks as `ndarray` of shape (h, w, 3), type `uint8` or `PIL.Image.Image` with mode 'RGB'.
-        scale (float, optional): if scale is different of 1.0 then rescale the target
-        text_color (list, optional): text color (R, G, B) if target contains a text
+        target: text as `str`, polygon as `ndarray` of shape (N, 2), polygon with labels as pair
+            (`ndarray` of shape (N, 2), `str`), or segmentation masks as `ndarray` of shape (h, w, 3), type `uint8` or
+            `PIL.Image.Image` with mode 'RGB'. Target can also a tuple/list of all these basic types.
+        scale (float, optional): if scale is different of 1.0 then rescale the target.
+        text_color (list, optional): text color (R, G, B) if target contains a text.
         text_size (int, optional): text size if target contains a text.
-        geom_color (int, optional): geometry color (R, G, B) if target contains polygons to draw
-        blend_alpha (float): alpha for blending mask image into the input image
+        geom_color (int, optional): geometry color (R, G, B) if target contains polygons to draw.
+        blend_alpha (float): alpha for blending mask image into the input image.
 
     Returns:
         PIL.Image.Image
@@ -310,39 +339,44 @@ def render_target(img, target, scale=1.0, text_color=(255, 255, 0), text_size=10
         pos = np.max(poly, axis=0).tolist()
         write_obj_label(img, pos, label=target[1], font=font)
 
-    def _recursive_render_target(img, target):
+    def _recursive_render_target(img, target, **kwargs):
+
+        _text_color = kwargs.get("text_color", text_color)
+        _text_size = kwargs.get("text_size", text_size)
+        _geom_color = kwargs.get("geom_color", geom_color)
+        _blend_alpha = kwargs.get("blend_alpha", blend_alpha)
+
         if isinstance(target, str):
-            font = get_default_font(text_size)
-            write_text(img, target, (1, 1), color=text_color, font=font)
+            font = get_default_font(_text_size)
+            write_text(img, target, (1, 1), color=_text_color, font=font)
             return img
         elif is_points(target):
-            _render_points(img, target, geom_color)
-            return img
-        elif is_list_of_points(target):
-            for t in target:
-                _render_points(img, t, geom_color)
+            _render_points(img, target, _geom_color)
             return img
         elif is_points_with_labels(target):
-            font = get_default_font(text_size)
-            _render_points_with_label(img, target, font, geom_color)
-            return img
-        elif is_list_of_points_with_labels(target):
-            font = get_default_font(text_size)
-            for t in target:
-                _render_points_with_label(img, t, font, geom_color)
+            font = get_default_font(_text_size)
+            _render_points_with_label(img, target, font, _geom_color)
             return img
         elif is_ndarray_image(target) or is_pil_image(target):
             mask = to_pil(target)
             if scale != 1.0:
                 # Rescale mask
                 mask = mask.resize(img.size)
-            return Image.blend(img, mask, alpha=blend_alpha)
-        elif is_list_of_basic_types(target):
+            return Image.blend(img, mask, alpha=_blend_alpha)
+        elif isinstance(target, (tuple, list)):
+            # check if there is dict of kwargs is present
+            kwargs = {}
+            _target = []
             for t in target:
-                img = _recursive_render_target(img, t)
+                if isinstance(t, dict):
+                    kwargs = t
+                    continue
+                _target.append(t)
+            for t in _target:
+                img = _recursive_render_target(img, t, **kwargs)
             return img
         else:
-            raise TypeError("Unknown target type")
+            raise TypeError("Unknown target type: {}".format(type(target)))
 
     return _recursive_render_target(img, target)
 
@@ -479,21 +513,30 @@ def check_image_type(img):
 
 
 def is_basic_target_type(target):
-    return isinstance(target, str) or \
+    is_basic_type = isinstance(target, str) or \
         is_points(target) or \
-        is_list_of_points(target) or \
         is_points_with_labels(target) or \
-        is_list_of_points_with_labels(target) or \
         is_ndarray_image(target) or \
         is_pil_image(target)
+    is_kwargs = isinstance(target, dict) and \
+        ("text_color" in target or
+         "text_size" in target or
+         "geom_color" in target or
+         "blend_alpha" in target)
+    return is_basic_type or is_kwargs
 
 
 def is_list_of_basic_types(target):
-    return isinstance(target, (tuple, list)) and all([is_basic_target_type(t) for t in target])
+    if isinstance(target, (tuple, list)):
+        output = True
+        for t in target:
+            output &= is_list_of_basic_types(t)
+        return output
+    else:
+        return is_basic_target_type(target)
 
 
 def check_target_type(target):
-
     assert is_list_of_basic_types(target) or is_basic_target_type(target), \
         "Target should be a text as `str`, points as list of `ndarray`s of shape (N, 2)," + \
         "points with labels as list of pairs (`ndarray` of shape (N, 2), `str`)" + \
