@@ -113,3 +113,25 @@ and thus we should obtain a single png image with composed of 20x50 small sample
 
 - [CIFAR10](examples/example_CIFAR10.ipynb)
 - [VEDAI](examples/example_VEDAI.ipynb)
+
+### Other basic examples
+
+#### Image and Mask/BBox/Label
+
+```python
+import numpy as np
+from image_dataset_viz import render_datapoint, bbox_to_points
+
+img = ((0, 0, 255) * np.ones((256, 256, 3))).astype(np.uint8)
+bbox = (
+    (bbox_to_points((10, 12, 145, 156)), "A"),
+    (bbox_to_points((109, 120, 215, 236)), "B"),    
+)
+
+mask = 0 * np.ones((256, 256, 3), dtype=np.uint8)
+mask[34:145, 56:123, :] = 255
+
+res = render_datapoint(img, (mask, "mask", bbox), blend_alpha=0.5)
+```
+![result](https://user-images.githubusercontent.com/2459423/47006730-e417bc00-d136-11e8-82bd-eb13c153f03f.png)
+
