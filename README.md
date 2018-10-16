@@ -135,3 +135,30 @@ res = render_datapoint(img, (mask, "mask", bbox), blend_alpha=0.5)
 ```
 ![result](https://user-images.githubusercontent.com/2459423/47006730-e417bc00-d136-11e8-82bd-eb13c153f03f.png)
 
+#### Image and Multi-Colored BBoxes 
+
+```python
+import numpy as np
+from image_dataset_viz import render_datapoint, bbox_to_points
+
+
+img = ((0, 0, 255) * np.ones((256, 256, 3))).astype(np.uint8)
+
+mask = 0 * np.ones((256, 256, 3), dtype=np.uint8)
+mask[34:145, 56:123, :] = 255
+
+targets = (
+    (mask, {"blend_alpha": 0.6}),
+    (
+        (bbox_to_points((10, 12, 145, 156)), "A"), 
+        (bbox_to_points((109, 120, 215, 236)), "B"),
+        {"geom_color": (255, 255, 0)}
+    ),
+    (bbox_to_points((129, 140, 175, 186)), "C"),
+)
+
+res = render_datapoint(img, targets, blend_alpha=0.5)
+```
+
+![result](https://user-images.githubusercontent.com/2459423/47010583-bbe08b00-d13f-11e8-81e6-4df58f58e89e.png)
+
