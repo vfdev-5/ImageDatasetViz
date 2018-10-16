@@ -54,25 +54,61 @@ class TestDatasetExporter(TestCase):
 
     def test_render_datapoint(self):
 
-        img = np.ones((100, 120, 3), dtype=np.uint8)
+        img = ((0, 0, 255) * np.ones((256, 256, 3))).astype(np.uint8)
         target1 = "test label"
-        res = render_datapoint(img, "test label", text_color=(0, 255, 0), text_size=10)
-        assert isinstance(res, Image.Image)
-
-        target2 = Image.fromarray(np.ones((100, 120, 3), dtype=np.uint8))
         res = render_datapoint(img, target1, text_color=(0, 255, 0), text_size=10)
         assert isinstance(res, Image.Image)
+        np_res = np.asarray(res)
+        unique_pixels = np_res.reshape(-1, 3).tolist()
+        unique_pixels = set([tuple(p) for p in unique_pixels])
+        assert (0, 0, 255) in unique_pixels
+        assert (0, 255, 0) in unique_pixels
 
+        img = ((0, 0, 255) * np.ones((256, 256, 3))).astype(np.uint8)
+        target2 = 0 * np.ones((256, 256, 3), dtype=np.uint8)
+        target2[34:145, 56:123, :] = 255
+        res = render_datapoint(img, target2, blend_alpha=0.5)
+        assert isinstance(res, Image.Image)
+        np_res = np.asarray(res)
+        unique_pixels = np_res.reshape(-1, 3).tolist()
+        unique_pixels = set([tuple(p) for p in unique_pixels])
+        assert (0, 0, 127) in unique_pixels
+        assert (127, 127, 255) in unique_pixels
+
+        img = ((0, 0, 255) * np.ones((256, 256, 3))).astype(np.uint8)
         target3 = np.array([[10, 10], [55, 10], [55, 77], [10, 77]])
-        res = render_datapoint(img, target2, geom_color=(255, 0, 0))
+        res = render_datapoint(img, target3, geom_color=(255, 0, 0))
         assert isinstance(res, Image.Image)
+        np_res = np.asarray(res)
+        unique_pixels = np_res.reshape(-1, 3).tolist()
+        unique_pixels = set([tuple(p) for p in unique_pixels])
+        assert (0, 0, 255) in unique_pixels
+        assert (255, 0, 0) in unique_pixels
 
+        img = ((0, 0, 255) * np.ones((256, 256, 3))).astype(np.uint8)
         target4 = (np.array([[10, 10], [55, 10], [55, 77], [10, 77]]), "test")
-        res = render_datapoint(img, target2, geom_color=(255, 0, 0))
+        res = render_datapoint(img, target4, geom_color=(255, 0, 0))
         assert isinstance(res, Image.Image)
+        np_res = np.asarray(res)
+        unique_pixels = np_res.reshape(-1, 3).tolist()
+        unique_pixels = set([tuple(p) for p in unique_pixels])
+        assert (0, 0, 255) in unique_pixels
+        assert (255, 0, 0) in unique_pixels
+        assert (255, 255, 255) in unique_pixels
+        assert (0, 0, 0) in unique_pixels
 
-        res = render_datapoint(img, [target1, target2, target3, target4], geom_color=(255, 0, 0))
+        res = render_datapoint(img, [target2, target1, target3, target4],
+                               text_color=(0, 255, 0), text_size=10,
+                               geom_color=(255, 0, 0), blend_alpha=0.5)
         assert isinstance(res, Image.Image)
+        np_res = np.asarray(res)
+        unique_pixels = np_res.reshape(-1, 3).tolist()
+        unique_pixels = set([tuple(p) for p in unique_pixels])
+        assert (0, 0, 127) in unique_pixels
+        assert (0, 255, 0) in unique_pixels
+        assert (255, 0, 0) in unique_pixels
+        assert (255, 255, 255) in unique_pixels
+        assert (0, 0, 0) in unique_pixels
 
     def test_export_datapoint(self):
 
