@@ -13,6 +13,7 @@ from unittest import TestCase, main
 import numpy as np
 from PIL import Image, ImageFont
 
+from image_dataset_viz import bbox_to_points
 from image_dataset_viz.dataset_exporter import resize_image, DatasetExporter, \
     get_default_font, to_pil, render_datapoint
 
@@ -107,6 +108,31 @@ class TestDatasetExporter(TestCase):
         assert (0, 0, 127) in unique_pixels
         assert (0, 255, 0) in unique_pixels
         assert (255, 0, 0) in unique_pixels
+        assert (255, 255, 255) in unique_pixels
+        assert (0, 0, 0) in unique_pixels
+
+    def test_render_datapoint_with_kwargs(self):
+        img = ((0, 0, 255) * np.ones((256, 256, 3))).astype(np.uint8)
+        mask = 0 * np.ones((256, 256, 3), dtype=np.uint8)
+        mask[34:145, 56:123, :] = 255
+
+        targets = (
+            (mask, {"blend_alpha": 0.7}),
+            (
+                (bbox_to_points((10, 12, 145, 156)), "A"),
+                (bbox_to_points((109, 120, 215, 236)), "B"),
+                {"geom_color": (255, 255, 0)}
+            ),
+            (bbox_to_points((129, 140, 175, 186)), "C"),
+        )
+        res = render_datapoint(img, targets, blend_alpha=0.5)
+        assert isinstance(res, Image.Image)
+        np_res = np.asarray(res)
+        unique_pixels = np_res.reshape(-1, 3).tolist()
+        unique_pixels = set([tuple(p) for p in unique_pixels])
+        assert (0, 0, int(255 * 0.3)) in unique_pixels
+        assert (255, 255, 0) in unique_pixels
+        assert (0, 255, 0) in unique_pixels
         assert (255, 255, 255) in unique_pixels
         assert (0, 0, 0) in unique_pixels
 
