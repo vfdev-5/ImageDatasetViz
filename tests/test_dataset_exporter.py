@@ -149,6 +149,51 @@ class TestDatasetExporter(TestCase):
         assert (255, 255, 255) in unique_pixels
         assert (0, 0, 0) in unique_pixels
 
+    def test_render_datapoint_with_several_masks(self):
+
+        img = ((123, 234, 220) * np.ones((256, 256, 3))).astype(np.uint8)
+
+        mask1 = np.zeros((256, 256, 3), dtype=np.uint8)
+        mask1[34:145, 56:123, :] = (255, 0, 0)
+
+        mask2 = np.zeros((256, 256, 3), dtype=np.uint8)
+        mask2[134:245, 156:223, :] = (255, 255, 0)
+
+        alpha1 = 0.7
+        alpha2 = 0.7
+        targets = (
+            (mask1, {"blend_alpha": alpha1}),
+            (mask2, {"blend_alpha": alpha2}),
+            (
+                (bbox_to_points((10, 12, 145, 156)), "A"),
+                (bbox_to_points((109, 120, 215, 236)), "B"),
+                {"geom_color": (255, 255, 0)}
+            ),
+            (bbox_to_points((129, 140, 175, 186)), "C"),
+        )
+
+        res = render_datapoint(img, targets, blend_alpha=0.5)
+        assert isinstance(res, Image.Image)
+        np_res = np.asarray(res)
+        unique_pixels = np_res.reshape(-1, 3).tolist()
+        unique_pixels = set([tuple(p) for p in unique_pixels])
+        # image
+        assert (123, 234, 220) in unique_pixels
+        # mask1
+        assert (int(123 * (1.0 - alpha1) + alpha1 * 255),
+                int(234 * (1.0 - alpha1) + alpha1 * 0),
+                int(220 * (1.0 - alpha1) + alpha1 * 0)) in unique_pixels
+        # mask2
+        assert (int(123 * (1.0 - alpha2) + alpha2 * 255),
+                int(234 * (1.0 - alpha2) + alpha2 * 255),
+                int(220 * (1.0 - alpha2) + alpha2 * 0)) in unique_pixels
+        # geoms
+        assert (255, 255, 0) in unique_pixels
+        assert (0, 255, 0) in unique_pixels
+        # labels
+        assert (255, 255, 255) in unique_pixels
+        assert (0, 0, 0) in unique_pixels
+
     def test_export_datapoint(self):
 
         def read_img(i):
