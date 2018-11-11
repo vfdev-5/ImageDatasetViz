@@ -55,26 +55,29 @@ class TestDatasetExporter(TestCase):
 
     def test_render_datapoint(self):
 
-        img = ((0, 0, 255) * np.ones((256, 256, 3))).astype(np.uint8)
+        img = ((0, 0, 210) * np.ones((256, 256, 3))).astype(np.uint8)
         target1 = "test label"
-        res = render_datapoint(img, target1, text_color=(0, 255, 0), text_size=10)
+        res = render_datapoint(img, target1, text_color=(0, 123, 0), text_size=10)
         assert isinstance(res, Image.Image)
         np_res = np.asarray(res)
         unique_pixels = np_res.reshape(-1, 3).tolist()
         unique_pixels = set([tuple(p) for p in unique_pixels])
-        assert (0, 0, 255) in unique_pixels
-        assert (0, 255, 0) in unique_pixels
+        assert (0, 0, 210) in unique_pixels
+        assert (0, 123, 0) in unique_pixels
 
-        img = ((0, 0, 255) * np.ones((256, 256, 3))).astype(np.uint8)
-        target2 = 0 * np.ones((256, 256, 3), dtype=np.uint8)
+        img = ((0, 0, 210) * np.ones((256, 256, 3))).astype(np.uint8)
+        target2 = np.zeros((256, 256, 3), dtype=np.uint8)
         target2[34:145, 56:123, :] = 255
-        res = render_datapoint(img, target2, blend_alpha=0.5)
+        alpha = 0.5
+        res = render_datapoint(img, target2, blend_alpha=alpha)
         assert isinstance(res, Image.Image)
         np_res = np.asarray(res)
         unique_pixels = np_res.reshape(-1, 3).tolist()
         unique_pixels = set([tuple(p) for p in unique_pixels])
-        assert (0, 0, 127) in unique_pixels
-        assert (127, 127, 255) in unique_pixels
+        assert (int(255 * alpha),
+                int(255 * alpha),
+                int(210 * (1.0 - alpha) + 255 * alpha)) in unique_pixels
+        assert (0, 0, 210) in unique_pixels
 
         img = ((0, 0, 255) * np.ones((256, 256, 3))).astype(np.uint8)
         target3 = np.array([[10, 10], [55, 10], [55, 77], [10, 77]])
@@ -86,38 +89,46 @@ class TestDatasetExporter(TestCase):
         assert (0, 0, 255) in unique_pixels
         assert (255, 0, 0) in unique_pixels
 
-        img = ((0, 0, 255) * np.ones((256, 256, 3))).astype(np.uint8)
+        img = ((0, 0, 210) * np.ones((256, 256, 3))).astype(np.uint8)
         target4 = (np.array([[10, 10], [55, 10], [55, 77], [10, 77]]), "test")
-        res = render_datapoint(img, target4, geom_color=(255, 0, 0))
+        res = render_datapoint(img, target4, geom_color=(123, 0, 0))
         assert isinstance(res, Image.Image)
         np_res = np.asarray(res)
         unique_pixels = np_res.reshape(-1, 3).tolist()
         unique_pixels = set([tuple(p) for p in unique_pixels])
-        assert (0, 0, 255) in unique_pixels
-        assert (255, 0, 0) in unique_pixels
+        assert (0, 0, 210) in unique_pixels
+        assert (123, 0, 0) in unique_pixels
         assert (255, 255, 255) in unique_pixels
         assert (0, 0, 0) in unique_pixels
 
         res = render_datapoint(img, [target2, target1, target3, target4],
-                               text_color=(0, 255, 0), text_size=10,
-                               geom_color=(255, 0, 0), blend_alpha=0.5)
+                               text_color=(0, 123, 0), text_size=10,
+                               geom_color=(234, 0, 0), blend_alpha=alpha)
         assert isinstance(res, Image.Image)
         np_res = np.asarray(res)
         unique_pixels = np_res.reshape(-1, 3).tolist()
         unique_pixels = set([tuple(p) for p in unique_pixels])
-        assert (0, 0, 127) in unique_pixels
-        assert (0, 255, 0) in unique_pixels
-        assert (255, 0, 0) in unique_pixels
+        # Check target2
+        assert (int(255 * alpha),
+                int(255 * alpha),
+                int(210 * (1.0 - alpha) + 255 * alpha)) in unique_pixels
+        assert (0, 0, 210) in unique_pixels
+        # Check target1
+        assert (0, 123, 0) in unique_pixels
+        # Check target3
+        assert (234, 0, 0) in unique_pixels
+        # Check label colors
         assert (255, 255, 255) in unique_pixels
         assert (0, 0, 0) in unique_pixels
 
     def test_render_datapoint_with_kwargs(self):
-        img = ((0, 0, 255) * np.ones((256, 256, 3))).astype(np.uint8)
-        mask = 0 * np.ones((256, 256, 3), dtype=np.uint8)
-        mask[34:145, 56:123, :] = 255
+        img = ((123, 234, 220) * np.ones((256, 256, 3))).astype(np.uint8)
+        mask = np.zeros((256, 256, 3), dtype=np.uint8)
+        mask[34:145, 56:123, :] = (255, 255, 0)
 
+        alpha = 0.7
         targets = (
-            (mask, {"blend_alpha": 0.7}),
+            (mask, {"blend_alpha": alpha}),
             (
                 (bbox_to_points((10, 12, 145, 156)), "A"),
                 (bbox_to_points((109, 120, 215, 236)), "B"),
@@ -130,7 +141,9 @@ class TestDatasetExporter(TestCase):
         np_res = np.asarray(res)
         unique_pixels = np_res.reshape(-1, 3).tolist()
         unique_pixels = set([tuple(p) for p in unique_pixels])
-        assert (0, 0, int(255 * 0.3)) in unique_pixels
+        assert (int(123 * (1.0 - alpha) + alpha * 255),
+                int(234 * (1.0 - alpha) + alpha * 255),
+                int(220 * (1.0 - alpha) + alpha * 0)) in unique_pixels
         assert (255, 255, 0) in unique_pixels
         assert (0, 255, 0) in unique_pixels
         assert (255, 255, 255) in unique_pixels

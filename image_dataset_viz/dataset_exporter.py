@@ -7,7 +7,7 @@ except ImportError:
     from pathlib2 import Path
 
 import numpy as np
-from PIL import ImageDraw, ImageFont, Image
+from PIL import ImageDraw, ImageFont, Image, ImageChops
 
 from tqdm import tqdm
 
@@ -362,7 +362,9 @@ def render_target(img, target, scale=1.0, text_color=(255, 255, 0), text_size=10
             if scale != 1.0:
                 # Rescale mask
                 mask = mask.resize(img.size)
-            return Image.blend(img, mask, alpha=_blend_alpha)
+            inv_bin_mask = Image.eval(mask.convert("L"), lambda p: 0 if p > 0 else 255).convert("RGB")
+            img_plus_mask = ImageChops.add(ImageChops.multiply(img, inv_bin_mask), mask)
+            return Image.blend(img, img_plus_mask, alpha=_blend_alpha)
         elif isinstance(target, (tuple, list)):
             # check if there is dict of kwargs is present
             kwargs = {}
@@ -518,11 +520,13 @@ def is_basic_target_type(target):
         is_points_with_labels(target) or \
         is_ndarray_image(target) or \
         is_pil_image(target)
-    is_kwargs = isinstance(target, dict) and \
-        ("text_color" in target or
-         "text_size" in target or
-         "geom_color" in target or
-         "blend_alpha" in target)
+    args = [
+        "text_color",
+        "text_size",
+        "geom_color",
+        "blend_alpha"
+    ]
+    is_kwargs = isinstance(target, dict) and any([arg in target for arg in args])
     return is_basic_type or is_kwargs
 
 
