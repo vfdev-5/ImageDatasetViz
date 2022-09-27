@@ -40,9 +40,3 @@ jobs:
       - name: Run Tests
         run: |
           pytest -vvv --cov image_dataset_viz --cov-report term-missing
-
-      - name: Upload coverage to coveralls
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          coveralls

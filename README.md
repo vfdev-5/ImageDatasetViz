@@ -1,31 +1,34 @@
 
-# ImageDatasetViz 
-[![Build Status](https://travis-ci.org/vfdev-5/ImageDatasetViz.svg?branch=master)](https://travis-ci.org/vfdev-5/ImageDatasetViz)
-[![Coverage Status](https://coveralls.io/repos/github/vfdev-5/ImageDatasetViz/badge.svg?branch=master)](https://coveralls.io/github/vfdev-5/ImageDatasetViz?branch=master)
+# ImageDatasetViz
+
+
+<!-- [![Build Status](https://travis-ci.org/vfdev-5/ImageDatasetViz.svg?branch=master)](https://travis-ci.org/vfdev-5/ImageDatasetViz) -->
+
+<!-- [![Coverage Status](https://coveralls.io/repos/github/vfdev-5/ImageDatasetViz/badge.svg?branch=master)](https://coveralls.io/github/vfdev-5/ImageDatasetViz?branch=master) -->
 
 Observe dataset of images and targets in few shots
- 
+
 ![VEDAI example](examples/vedai_example.png)
 
 ## Descriptions
 
-Idea is to create tools to store images, targets from a dataset as a few large images to observe the dataset 
+Idea is to create tools to store images, targets from a dataset as a few large images to observe the dataset
 in few shots.
 
 
-## Installation 
+## Installation
 
 #### with pip
 
 ```bash
- pip install image-dataset-viz 
+ pip install image-dataset-viz
 ```
 
 #### from sources
 ```bash
 python setup.py install
 ```
-or 
+or
 ```bash
 pip install git+https://github.com/vfdev-5/ImageDatasetViz.git
 ```
@@ -35,7 +38,7 @@ pip install git+https://github.com/vfdev-5/ImageDatasetViz.git
 ### Render a single datapoint
 
 First, we can just take a look on a single data point rendering. Let's assume that we
-have `img` as, for example, `PIL.Image` and `target` as acceptable target type (`str` or list of points or 
+have `img` as, for example, `PIL.Image` and `target` as acceptable target type (`str` or list of points or
 `PIL.Image` mask, etc), thus we can generate a single image with target.
 
 ```python
@@ -125,7 +128,7 @@ from image_dataset_viz import render_datapoint, bbox_to_points
 img = ((0, 0, 255) * np.ones((256, 256, 3))).astype(np.uint8)
 bbox = (
     (bbox_to_points((10, 12, 145, 156)), "A"),
-    (bbox_to_points((109, 120, 215, 236)), "B"),    
+    (bbox_to_points((109, 120, 215, 236)), "B"),
 )
 
 mask = 0 * np.ones((256, 256, 3), dtype=np.uint8)
@@ -135,7 +138,7 @@ res = render_datapoint(img, (mask, "mask", bbox), blend_alpha=0.5)
 ```
 ![result](https://user-images.githubusercontent.com/2459423/47006730-e417bc00-d136-11e8-82bd-eb13c153f03f.png)
 
-#### Image and Multi-Colored BBoxes 
+#### Image and Multi-Colored BBoxes
 
 ```python
 import numpy as np
@@ -150,7 +153,7 @@ mask[34:145, 56:123, :] = 255
 targets = (
     (mask, {"blend_alpha": 0.6}),
     (
-        (bbox_to_points((10, 12, 145, 156)), "A"), 
+        (bbox_to_points((10, 12, 145, 156)), "A"),
         (bbox_to_points((109, 120, 215, 236)), "B"),
         {"geom_color": (255, 255, 0)}
     ),
