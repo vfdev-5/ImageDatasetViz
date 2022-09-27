@@ -33,7 +33,7 @@ deploy:
   password: $PYPI_TOKEN
   # otherwise, follow "How to encrypt the password": https://docs.travis-ci.com/user/encryption-keys/
   # `travis encrypt deploy.password="password"`
-#    secure: "secured_password"
+  #    secure: "secured_password"
 
   skip_cleanup: true
   distributions: "sdist bdist_wheel"
