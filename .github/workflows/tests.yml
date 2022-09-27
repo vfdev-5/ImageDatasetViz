@@ -1,0 +1,42 @@
+name: Run unit tests
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+concurrency:
+  # <workflow_name>-<branch_name>-<true || commit_sha (if branch is protected)>
+  group: unit-tests-${{ github.ref_name }}-${{ !(github.ref_protected) || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      max-parallel: 5
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - name: Install dependencies
+        run: |
+          python setup.py install
+          pip install flake8 coveralls pytest-cov
+
+      - name: Check code formatting
+        run: |
+          flake8
+
+      - name: Run Tests
+        run: |
+          pytest -vvv --cov image_dataset_viz --cov-report term-missing

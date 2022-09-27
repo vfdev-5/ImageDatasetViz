@@ -1,10 +1,6 @@
-from __future__ import division
 import sys
 
-try:
-    from pathlib import Path
-except ImportError:
-    from pathlib2 import Path
+from pathlib import Path
 
 import numpy as np
 from PIL import ImageDraw, ImageFont, Image, ImageChops
@@ -29,9 +25,16 @@ def get_default_font(text_size):
         return ImageFont.truetype(font=font_path.as_posix(), size=text_size)
 
 
-def render_datapoint(img, target=None, image_id=None, output_size=None,
-                     text_color=(0, 255, 0), text_size=10,
-                     geom_color=(0, 255, 0), blend_alpha=0.7):
+def render_datapoint(
+    img,
+    target=None,
+    image_id=None,
+    output_size=None,
+    text_color=(0, 255, 0),
+    text_size=10,
+    geom_color=(0, 255, 0),
+    blend_alpha=0.7,
+):
     """Method to render image and target as PIL image
 
     Args:
@@ -89,15 +92,16 @@ def render_datapoint(img, target=None, image_id=None, output_size=None,
         assert isinstance(image_id, str), "Image id should be a string"
 
     if target is not None or image_id is not None:
-        assert isinstance(text_color, (list, tuple)) and len(text_color) == 3, \
-            "Text color should be a list of 3 integers"
-        assert isinstance(text_size, int) and text_size > 0, \
-            "Text size should be a positive integer"
+        assert (
+            isinstance(text_color, (list, tuple)) and len(text_color) == 3
+        ), "Text color should be a list of 3 integers"
+        assert isinstance(text_size, int) and text_size > 0, "Text size should be a positive integer"
 
     img = to_pil(img)
     if output_size is not None:
-        assert isinstance(output_size, (list, tuple)) and \
-            len(output_size) == 2, "output_size should be a list of 2 integers".format(img.size)
+        assert (
+            isinstance(output_size, (list, tuple)) and len(output_size) == 2
+        ), "output_size should be a list of 2 integers, given {}".format(output_size)
         img, scale = resize_image(img, output_size)
     else:
         img = img.copy()
@@ -105,8 +109,15 @@ def render_datapoint(img, target=None, image_id=None, output_size=None,
 
     if target is not None:
         # Render target
-        img = render_target(img, target, scale=scale, text_color=text_color,
-                            text_size=text_size, geom_color=geom_color, blend_alpha=blend_alpha)
+        img = render_target(
+            img,
+            target,
+            scale=scale,
+            text_color=text_color,
+            text_size=text_size,
+            geom_color=geom_color,
+            blend_alpha=blend_alpha,
+        )
 
     # Write image id
     if image_id is not None:
@@ -168,13 +179,21 @@ class DatasetExporter:
     and thus we should obtain a single png image with composed of 20x50 small samples.
     """
 
-    def __init__(self, read_img_fn=None, read_target_fn=None, img_id_fn=None,
-                 max_output_img_size=(256, 256), margins=(5, 5),
-                 n_cols=10, max_n_rows=50,
-                 background_color=(127, 127, 120),
-                 text_color=(255, 245, 235), text_size=11,
-                 geom_color=(0, 255, 0),
-                 blend_alpha=0.75):
+    def __init__(
+        self,
+        read_img_fn=None,
+        read_target_fn=None,
+        img_id_fn=None,
+        max_output_img_size=(256, 256),
+        margins=(5, 5),
+        n_cols=10,
+        max_n_rows=50,
+        background_color=(127, 127, 120),
+        text_color=(255, 245, 235),
+        text_size=11,
+        geom_color=(0, 255, 0),
+        blend_alpha=0.75,
+    ):
         """
         Initialize dataset exporter instance
 
@@ -233,9 +252,16 @@ class DatasetExporter:
         if target is not None:
             target = self.read_target_fn(target)
 
-        img = render_datapoint(raw_img, target, image_id=image_id, output_size=self.max_output_img_size,
-                               text_color=self.text_color, text_size=self.text_size,
-                               geom_color=self.geom_color, blend_alpha=self.blend_alpha)
+        img = render_datapoint(
+            raw_img,
+            target,
+            image_id=image_id,
+            output_size=self.max_output_img_size,
+            text_color=self.text_color,
+            text_size=self.text_size,
+            geom_color=self.geom_color,
+            blend_alpha=self.blend_alpha,
+        )
 
         filepath = Path(output_filepath)
         if filepath.suffix != ".png":
@@ -255,13 +281,12 @@ class DatasetExporter:
         Returns:
 
         """
-        assert isinstance(img_files, (list, tuple)), \
-            "Arguments `img_files` should be lists or tuples"
+        assert isinstance(img_files, (list, tuple)), "Arguments `img_files` should be lists or tuples"
         if targets is not None:
-            assert isinstance(targets, (list, tuple)), \
-                "Arguments `targets` should be lists or tuples"
-            assert len(img_files) == len(targets), \
-                "Number of input images should be equal to the number of input targets"
+            assert isinstance(targets, (list, tuple)), "Arguments `targets` should be lists or tuples"
+            assert len(img_files) == len(
+                targets
+            ), "Number of input images should be equal to the number of input targets"
         else:
             targets = [None] * len(img_files)
 
@@ -278,9 +303,9 @@ class DatasetExporter:
 
         with get_tqdm(total=n_images) as bar:
             for c in range(0, n_images, max_counter):
-                total_img = Image.new(mode='RGB', size=size, color=self.background_color)
+                total_img = Image.new(mode="RGB", size=size, color=self.background_color)
                 filepath = output / (filename_prefix + "_part_{}.png".format(c))
-                for i, (f, t) in enumerate(zip(img_files[c:c + max_counter], targets[c:c + max_counter])):
+                for i, (f, t) in enumerate(zip(img_files[c : c + max_counter], targets[c : c + max_counter])):
                     iy, ix = np.unravel_index(i, (n_rows, self.n_cols))
                     x = ix * (self.max_output_img_size[0] + self.margins[0]) + self.margins[0] // 2
                     y = iy * (self.max_output_img_size[1] + self.margins[1]) + self.margins[1] // 2
@@ -288,16 +313,30 @@ class DatasetExporter:
                     raw_img = self.read_img_fn(f)
                     image_id = self.img_id_fn(f)
                     target = self.read_target_fn(t)
-                    img = render_datapoint(raw_img, target, image_id=image_id, output_size=self.max_output_img_size,
-                                           text_color=self.text_color, text_size=self.text_size,
-                                           geom_color=self.geom_color, blend_alpha=self.blend_alpha)
+                    img = render_datapoint(
+                        raw_img,
+                        target,
+                        image_id=image_id,
+                        output_size=self.max_output_img_size,
+                        text_color=self.text_color,
+                        text_size=self.text_size,
+                        geom_color=self.geom_color,
+                        blend_alpha=self.blend_alpha,
+                    )
                     total_img.paste(img, (x, y))
                     bar.update(1)
                 total_img.save(filepath.as_posix())
 
 
-def render_target(img, target, scale=1.0, text_color=(255, 255, 0), text_size=10,
-                  geom_color=(0, 255, 0), blend_alpha=0.7):
+def render_target(
+    img,
+    target,
+    scale=1.0,
+    text_color=(255, 255, 0),
+    text_size=10,
+    geom_color=(0, 255, 0),
+    blend_alpha=0.7,
+):
     """Method to render target to the image
 
     Args:
@@ -316,16 +355,15 @@ def render_target(img, target, scale=1.0, text_color=(255, 255, 0), text_size=10
     """
     check_image_type(img)
     check_target_type(target)
-    assert isinstance(text_color, (list, tuple)) and len(text_color) == 3, \
-        "Text color should be a list of 3 integers"
-    assert isinstance(text_size, int) and text_size > 0, \
-        "Text size should be a positive integer"
-    assert isinstance(geom_color, (list, tuple)) and len(geom_color) == 3, \
-        "Geometry color should be a list of 3 integers"
-    assert isinstance(blend_alpha, float) and 0.0 <= blend_alpha <= 1.0, \
-        "Alpha should be a positive float between 0 and 1"
-    assert isinstance(scale, float) and scale > 0.0, \
-        "Scale should be a positive float"
+    assert isinstance(text_color, (list, tuple)) and len(text_color) == 3, "Text color should be a list of 3 integers"
+    assert isinstance(text_size, int) and text_size > 0, "Text size should be a positive integer"
+    assert (
+        isinstance(geom_color, (list, tuple)) and len(geom_color) == 3
+    ), "Geometry color should be a list of 3 integers"
+    assert (
+        isinstance(blend_alpha, float) and 0.0 <= blend_alpha <= 1.0
+    ), "Alpha should be a positive float between 0 and 1"
+    assert isinstance(scale, float) and scale > 0.0, "Scale should be a positive float"
     img = to_pil(img)
 
     def _render_points(img, target, color=(0, 255, 0)):
@@ -395,26 +433,27 @@ def get_tqdm_kwargs(**kwargs):
         smoothing=0.5,
         dynamic_ncols=True,
         ascii=True,
-        bar_format='{l_bar}{bar}|{n_fmt}/{total_fmt}[{elapsed}<{remaining},{rate_noinv_fmt}]'
+        bar_format="{l_bar}{bar}|{n_fmt}/{total_fmt}[{elapsed}<{remaining},{rate_noinv_fmt}]",
     )
 
-    f = kwargs.get('file', sys.stderr)
+    f = kwargs.get("file", sys.stderr)
     isatty = f.isatty()
     # NOTE when run under mpirun/slurm, isatty is always False
     # Jupyter notebook should be recognized as tty.
     # Wait for https://github.com/ipython/ipykernel/issues/268
     try:
         from ipykernel import iostream
+
         if isinstance(f, iostream.OutStream):
             isatty = True
     except ImportError:
         pass
 
     if isatty:
-        default['mininterval'] = 0.5
+        default["mininterval"] = 0.5
     else:
         # If not a tty, don't refresh progress bar that often
-        default['mininterval'] = 180
+        default["mininterval"] = 180
     default.update(kwargs)
     return default
 
@@ -461,7 +500,7 @@ def write_text(img, text, pos, color, font, max_line_length=30):
 
     if len(text) > max_line_length:
         ll = len(text)
-        mltext = [text[c:c + max_line_length] for c in range(0, ll, max_line_length)]
+        mltext = [text[c : c + max_line_length] for c in range(0, ll, max_line_length)]
         text = "\n".join(mltext)
 
     text_size = draw.textsize(text, font=font)
@@ -488,7 +527,7 @@ def is_ndarray_image(img):
 
 
 def is_pil_image(img):
-    return isinstance(img, Image.Image) and img.mode in ('RGB', )
+    return isinstance(img, Image.Image) and img.mode in ("RGB",)
 
 
 def is_points(target):
@@ -500,8 +539,9 @@ def is_list_of_points(target):
 
 
 def is_points_with_labels(target):
-    return isinstance(target, (tuple, list)) and len(target) == 2 and \
-        isinstance(target[1], str) and is_points(target[0])
+    return (
+        isinstance(target, (tuple, list)) and len(target) == 2 and isinstance(target[1], str) and is_points(target[0])
+    )
 
 
 def is_list_of_points_with_labels(target):
@@ -509,23 +549,21 @@ def is_list_of_points_with_labels(target):
 
 
 def check_image_type(img):
-    assert is_ndarray_image(img) or \
-        is_pil_image(img), "Image should be `ndarray` of shape (h, w, 3), type `uint8` or" + \
-                           "`PIL.Image.Image` with mode 'RBG', but given {}".format(type(img))
+    assert is_ndarray_image(img) or is_pil_image(img), (
+        "Image should be `ndarray` of shape (h, w, 3), type `uint8` or "
+        "`PIL.Image.Image` with mode 'RBG', but given {}".format(type(img))
+    )
 
 
 def is_basic_target_type(target):
-    is_basic_type = isinstance(target, str) or \
-        is_points(target) or \
-        is_points_with_labels(target) or \
-        is_ndarray_image(target) or \
-        is_pil_image(target)
-    args = [
-        "text_color",
-        "text_size",
-        "geom_color",
-        "blend_alpha"
-    ]
+    is_basic_type = (
+        isinstance(target, str)
+        or is_points(target)
+        or is_points_with_labels(target)
+        or is_ndarray_image(target)
+        or is_pil_image(target)
+    )
+    args = ["text_color", "text_size", "geom_color", "blend_alpha"]
     is_kwargs = isinstance(target, dict) and any([arg in target for arg in args])
     return is_basic_type or is_kwargs
 
@@ -541,12 +579,13 @@ def is_list_of_basic_types(target):
 
 
 def check_target_type(target):
-    assert is_list_of_basic_types(target) or is_basic_target_type(target), \
-        "Target should be a text as `str`, points as list of `ndarray`s of shape (N, 2)," + \
-        "points with labels as list of pairs (`ndarray` of shape (N, 2), `str`)" + \
-        "or segmentation masks as `ndarray` of shape (h, w, 3), type `uint8` or " + \
-        "`PIL.Image.Image` with mode 'RGB'. " + \
+    assert is_list_of_basic_types(target) or is_basic_target_type(target), (
+        "Target should be a text as `str`, points as list of `ndarray`s of shape (N, 2), "
+        "points with labels as list of pairs (`ndarray` of shape (N, 2), `str`) "
+        "or segmentation masks as `ndarray` of shape (h, w, 3), type `uint8` or "
+        "`PIL.Image.Image` with mode 'RGB'. "
         "Target can be also a tuple/list of all this basic types. but given {}".format(type(target))
+    )
 
 
 def to_pil(img):

@@ -1,4 +1,3 @@
-
 import sys
 
 if sys.version_info[0] < 3:
@@ -14,12 +13,16 @@ import numpy as np
 from PIL import Image, ImageFont
 
 from image_dataset_viz import bbox_to_points
-from image_dataset_viz.dataset_exporter import resize_image, DatasetExporter, \
-    get_default_font, to_pil, render_datapoint
+from image_dataset_viz.dataset_exporter import (
+    resize_image,
+    DatasetExporter,
+    get_default_font,
+    to_pil,
+    render_datapoint,
+)
 
 
 class TestDatasetExporter(TestCase):
-
     def setUp(self):
         pass
 
@@ -32,7 +35,7 @@ class TestDatasetExporter(TestCase):
 
     def test_resize_image(self):
         size = (320, 300)
-        large_img = Image.new('RGB', size=size)
+        large_img = Image.new("RGB", size=size)
         max_dims = (256, 256)
         img, _ = resize_image(large_img, max_dims)
 
@@ -46,8 +49,13 @@ class TestDatasetExporter(TestCase):
             de.export_datapoint(0, "test", "test.png")
 
         with self.assertRaises(TypeError):
+
             def read_img(i):
-                img = Image.new(mode='RGB', size=(64, 64), color=(i % 255, (i * 2) % 255, (i * 3) % 255))
+                img = Image.new(
+                    mode="RGB",
+                    size=(64, 64),
+                    color=(i % 255, (i * 2) % 255, (i * 3) % 255),
+                )
                 return img
 
             de = DatasetExporter(read_img_fn=read_img)
@@ -74,9 +82,11 @@ class TestDatasetExporter(TestCase):
         np_res = np.asarray(res)
         unique_pixels = np_res.reshape(-1, 3).tolist()
         unique_pixels = set([tuple(p) for p in unique_pixels])
-        assert (int(255 * alpha),
-                int(255 * alpha),
-                int(210 * (1.0 - alpha) + 255 * alpha)) in unique_pixels
+        assert (
+            int(255 * alpha),
+            int(255 * alpha),
+            int(210 * (1.0 - alpha) + 255 * alpha),
+        ) in unique_pixels
         assert (0, 0, 210) in unique_pixels
 
         img = ((0, 0, 255) * np.ones((256, 256, 3))).astype(np.uint8)
@@ -101,17 +111,24 @@ class TestDatasetExporter(TestCase):
         assert (255, 255, 255) in unique_pixels
         assert (0, 0, 0) in unique_pixels
 
-        res = render_datapoint(img, [target2, target1, target3, target4],
-                               text_color=(0, 123, 0), text_size=10,
-                               geom_color=(234, 0, 0), blend_alpha=alpha)
+        res = render_datapoint(
+            img,
+            [target2, target1, target3, target4],
+            text_color=(0, 123, 0),
+            text_size=10,
+            geom_color=(234, 0, 0),
+            blend_alpha=alpha,
+        )
         assert isinstance(res, Image.Image)
         np_res = np.asarray(res)
         unique_pixels = np_res.reshape(-1, 3).tolist()
         unique_pixels = set([tuple(p) for p in unique_pixels])
         # Check target2
-        assert (int(255 * alpha),
-                int(255 * alpha),
-                int(210 * (1.0 - alpha) + 255 * alpha)) in unique_pixels
+        assert (
+            int(255 * alpha),
+            int(255 * alpha),
+            int(210 * (1.0 - alpha) + 255 * alpha),
+        ) in unique_pixels
         assert (0, 0, 210) in unique_pixels
         # Check target1
         assert (0, 123, 0) in unique_pixels
@@ -132,7 +149,7 @@ class TestDatasetExporter(TestCase):
             (
                 (bbox_to_points((10, 12, 145, 156)), "A"),
                 (bbox_to_points((109, 120, 215, 236)), "B"),
-                {"geom_color": (255, 255, 0)}
+                {"geom_color": (255, 255, 0)},
             ),
             (bbox_to_points((129, 140, 175, 186)), "C"),
         )
@@ -141,9 +158,11 @@ class TestDatasetExporter(TestCase):
         np_res = np.asarray(res)
         unique_pixels = np_res.reshape(-1, 3).tolist()
         unique_pixels = set([tuple(p) for p in unique_pixels])
-        assert (int(123 * (1.0 - alpha) + alpha * 255),
-                int(234 * (1.0 - alpha) + alpha * 255),
-                int(220 * (1.0 - alpha) + alpha * 0)) in unique_pixels
+        assert (
+            int(123 * (1.0 - alpha) + alpha * 255),
+            int(234 * (1.0 - alpha) + alpha * 255),
+            int(220 * (1.0 - alpha) + alpha * 0),
+        ) in unique_pixels
         assert (255, 255, 0) in unique_pixels
         assert (0, 255, 0) in unique_pixels
         assert (255, 255, 255) in unique_pixels
@@ -167,7 +186,7 @@ class TestDatasetExporter(TestCase):
             (
                 (bbox_to_points((10, 12, 145, 156)), "A"),
                 (bbox_to_points((109, 120, 215, 236)), "B"),
-                {"geom_color": (255, 255, 0)}
+                {"geom_color": (255, 255, 0)},
             ),
             (bbox_to_points((129, 140, 175, 186)), "C"),
         )
@@ -180,13 +199,17 @@ class TestDatasetExporter(TestCase):
         # image
         assert (123, 234, 220) in unique_pixels
         # mask1
-        assert (int(123 * (1.0 - alpha1) + alpha1 * 255),
-                int(234 * (1.0 - alpha1) + alpha1 * 0),
-                int(220 * (1.0 - alpha1) + alpha1 * 0)) in unique_pixels
+        assert (
+            int(123 * (1.0 - alpha1) + alpha1 * 255),
+            int(234 * (1.0 - alpha1) + alpha1 * 0),
+            int(220 * (1.0 - alpha1) + alpha1 * 0),
+        ) in unique_pixels
         # mask2
-        assert (int(123 * (1.0 - alpha2) + alpha2 * 255),
-                int(234 * (1.0 - alpha2) + alpha2 * 255),
-                int(220 * (1.0 - alpha2) + alpha2 * 0)) in unique_pixels
+        assert (
+            int(123 * (1.0 - alpha2) + alpha2 * 255),
+            int(234 * (1.0 - alpha2) + alpha2 * 255),
+            int(220 * (1.0 - alpha2) + alpha2 * 0),
+        ) in unique_pixels
         # geoms
         assert (255, 255, 0) in unique_pixels
         assert (0, 255, 0) in unique_pixels
@@ -195,9 +218,8 @@ class TestDatasetExporter(TestCase):
         assert (0, 0, 0) in unique_pixels
 
     def test_export_datapoint(self):
-
         def read_img(i):
-            img = Image.new(mode='RGB', size=(64, 64), color=(i % 255, (i * 2) % 255, (i * 3) % 255))
+            img = Image.new(mode="RGB", size=(64, 64), color=(i % 255, (i * 2) % 255, (i * 3) % 255))
             return img
 
         de = DatasetExporter(read_img_fn=read_img, img_id_fn=lambda x: str(x))
@@ -207,9 +229,8 @@ class TestDatasetExporter(TestCase):
             self.assertTrue(path.exists())
 
     def test_export_datapoint_non_png(self):
-
         def read_img(i):
-            img = Image.new(mode='RGB', size=(64, 64), color=(i % 255, (i * 2) % 255, (i * 3) % 255))
+            img = Image.new(mode="RGB", size=(64, 64), color=(i % 255, (i * 2) % 255, (i * 3) % 255))
             return img
 
         de = DatasetExporter(read_img_fn=read_img, img_id_fn=lambda x: str(x))
@@ -220,9 +241,8 @@ class TestDatasetExporter(TestCase):
             self.assertTrue(output_path.exists())
 
     def test_export_datapoint_target_none(self):
-
         def read_img(i):
-            img = Image.new(mode='RGB', size=(64, 64), color=(i % 255, (i * 2) % 255, (i * 3) % 255))
+            img = Image.new(mode="RGB", size=(64, 64), color=(i % 255, (i * 2) % 255, (i * 3) % 255))
             return img
 
         de = DatasetExporter(read_img_fn=read_img, img_id_fn=lambda x: str(x))
@@ -232,9 +252,8 @@ class TestDatasetExporter(TestCase):
             self.assertTrue(path.exists())
 
     def test_integration(self):
-
         def read_img(i):
-            img = Image.new(mode='RGB', size=(64, 64), color=(i % 255, (i * 2) % 255, (i * 3) % 255))
+            img = Image.new(mode="RGB", size=(64, 64), color=(i % 255, (i * 2) % 255, (i * 3) % 255))
             return img
 
         def read_target(i):
@@ -245,10 +264,15 @@ class TestDatasetExporter(TestCase):
         m = 5
         max_n_rows = 5
         n_cols = 10
-        de = DatasetExporter(read_img_fn=read_img, read_target_fn=read_target,
-                             img_id_fn=lambda x: str(x),
-                             max_output_img_size=(s, s), margins=(m, m),
-                             n_cols=n_cols, max_n_rows=max_n_rows)
+        de = DatasetExporter(
+            read_img_fn=read_img,
+            read_target_fn=read_target,
+            img_id_fn=lambda x: str(x),
+            max_output_img_size=(s, s),
+            margins=(m, m),
+            n_cols=n_cols,
+            max_n_rows=max_n_rows,
+        )
 
         indices = [i for i in range(n)]
 
@@ -260,11 +284,11 @@ class TestDatasetExporter(TestCase):
             for fp in out_files:
                 out_img = Image.open(fp)
                 self.assertEqual(out_img.size, ((s + m) * n_cols, (s + m) * max_n_rows))
+                out_img.close()
 
     def test_integration_targets_as_poly(self):
-
         def read_img(i):
-            img = Image.new(mode='RGB', size=(64, 64), color=(i % 255, (i * 2) % 255, (i * 3) % 255))
+            img = Image.new(mode="RGB", size=(64, 64), color=(i % 255, (i * 2) % 255, (i * 3) % 255))
             return img
 
         def read_target(i):
@@ -275,10 +299,15 @@ class TestDatasetExporter(TestCase):
         m = 5
         max_n_rows = 5
         n_cols = 10
-        de = DatasetExporter(read_img_fn=read_img, read_target_fn=read_target,
-                             img_id_fn=lambda x: str(x),
-                             max_output_img_size=(s, s), margins=(m, m),
-                             n_cols=n_cols, max_n_rows=max_n_rows)
+        de = DatasetExporter(
+            read_img_fn=read_img,
+            read_target_fn=read_target,
+            img_id_fn=lambda x: str(x),
+            max_output_img_size=(s, s),
+            margins=(m, m),
+            n_cols=n_cols,
+            max_n_rows=max_n_rows,
+        )
 
         indices = [i for i in range(n)]
 
@@ -290,11 +319,11 @@ class TestDatasetExporter(TestCase):
             for fp in out_files:
                 out_img = Image.open(fp)
                 self.assertEqual(out_img.size, ((s + m) * n_cols, (s + m) * max_n_rows))
+                out_img.close()
 
     def test_integration_targets_none(self):
-
         def read_img(i):
-            img = Image.new(mode='RGB', size=(64, 64), color=(i % 255, (i * 2) % 255, (i * 3) % 255))
+            img = Image.new(mode="RGB", size=(64, 64), color=(i % 255, (i * 2) % 255, (i * 3) % 255))
             return img
 
         n = 100
@@ -302,10 +331,14 @@ class TestDatasetExporter(TestCase):
         m = 5
         max_n_rows = 5
         n_cols = 10
-        de = DatasetExporter(read_img_fn=read_img,
-                             img_id_fn=lambda x: str(x),
-                             max_output_img_size=(s, s), margins=(m, m),
-                             n_cols=n_cols, max_n_rows=max_n_rows)
+        de = DatasetExporter(
+            read_img_fn=read_img,
+            img_id_fn=lambda x: str(x),
+            max_output_img_size=(s, s),
+            margins=(m, m),
+            n_cols=n_cols,
+            max_n_rows=max_n_rows,
+        )
 
         indices = [i for i in range(n)]
 
@@ -317,6 +350,7 @@ class TestDatasetExporter(TestCase):
             for fp in out_files:
                 out_img = Image.open(fp)
                 self.assertEqual(out_img.size, ((s + m) * n_cols, (s + m) * max_n_rows))
+                out_img.close()
 
     def test_to_pil(self):
         img = np.ones((100, 120, 3), dtype=np.uint8)

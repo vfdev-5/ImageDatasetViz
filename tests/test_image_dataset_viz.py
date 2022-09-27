@@ -6,7 +6,6 @@ from image_dataset_viz import bbox_to_points, xywh_to_xyxy, xyxy_to_xywh
 
 
 class TestHelperMethods(TestCase):
-
     def _test_func(self, input_, true_output, func):
 
         output = func(list(input_))
@@ -29,12 +28,7 @@ class TestHelperMethods(TestCase):
 
     def test_bbox_to_points(self):
         bbox = (10, 12, 34, 45)
-        true_points = np.array([
-            [10, 12],
-            [34, 12],
-            [34, 45],
-            [10, 45]
-        ])
+        true_points = np.array([[10, 12], [34, 12], [34, 45], [10, 45]])
         self._test_func(bbox, true_points, bbox_to_points)
 
     def test_xywh_to_xyxy(self):

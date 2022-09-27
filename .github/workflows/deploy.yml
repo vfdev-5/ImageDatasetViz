@@ -1,0 +1,24 @@
+name: PyPI Stable Releases
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - name: Install dependencies
+        run: |
+          python setup.py install
+
+      - name: Build and Publish PyPI binaries
+        run: |
+          python setup.py sdist bdist_wheel
+          twine check dist/*
+          TWINE_USERNAME="${{ secrets.PYPI_USER }}" TWINE_PASSWORD="${{ secrets.PYPI_TOKEN }}" twine upload --verbose dist/*
