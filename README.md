@@ -1,6 +1,7 @@
 
 # ImageDatasetViz
 
+[![Run unit tests](https://github.com/vfdev-5/ImageDatasetViz/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/vfdev-5/ImageDatasetViz/actions/workflows/tests.yml)
 
 <!-- [![Build Status](https://travis-ci.org/vfdev-5/ImageDatasetViz.svg?branch=master)](https://travis-ci.org/vfdev-5/ImageDatasetViz) -->
 
