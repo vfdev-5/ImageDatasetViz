@@ -284,6 +284,7 @@ class TestDatasetExporter(TestCase):
             for fp in out_files:
                 out_img = Image.open(fp)
                 self.assertEqual(out_img.size, ((s + m) * n_cols, (s + m) * max_n_rows))
+                out_img.close()
 
     def test_integration_targets_as_poly(self):
         def read_img(i):
@@ -318,6 +319,7 @@ class TestDatasetExporter(TestCase):
             for fp in out_files:
                 out_img = Image.open(fp)
                 self.assertEqual(out_img.size, ((s + m) * n_cols, (s + m) * max_n_rows))
+                out_img.close()
 
     def test_integration_targets_none(self):
         def read_img(i):
@@ -348,6 +350,7 @@ class TestDatasetExporter(TestCase):
             for fp in out_files:
                 out_img = Image.open(fp)
                 self.assertEqual(out_img.size, ((s + m) * n_cols, (s + m) * max_n_rows))
+                out_img.close()
 
     def test_to_pil(self):
         img = np.ones((100, 120, 3), dtype=np.uint8)
